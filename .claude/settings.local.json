@@ -25,7 +25,8 @@
       "Bash(python3 -c ' *)",
       "Bash(python3 -c 'import time; print\\(int\\(\\(time.time\\(\\)-3600\\)*1000\\)\\)')",
       "Bash(curl -s 'https://api.vercel.com/v1/projects/prj_jScdxoK7lyWdSe6CSOFqf7m0Fl1I/function-logs?teamId=__TRACKED_VAR__&limit=50&since=__CMDSUB_OUTPUT__' -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
-      "Bash(curl -s 'https://api.vercel.com/v1/logs?teamId=__TRACKED_VAR__&projectId=prj_jScdxoK7lyWdSe6CSOFqf7m0Fl1I&limit=50' -H 'Authorization: Bearer __CMDSUB_OUTPUT__')"
+      "Bash(curl -s 'https://api.vercel.com/v1/logs?teamId=__TRACKED_VAR__&projectId=prj_jScdxoK7lyWdSe6CSOFqf7m0Fl1I&limit=50' -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(python3 -c \"import sys,json; rows=json.load\\(sys.stdin\\); print\\(f'{len\\(rows\\)} discoverable profiles'\\); [print\\(f'  • {r[\\\\\"display_name\\\\\"]} \\(@{r[\\\\\"username\\\\\"]}\\)'\\) for r in rows]\")"
     ]
   }
 }
