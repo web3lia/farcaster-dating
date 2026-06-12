@@ -11,7 +11,21 @@
       "Bash(gh auth *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m 'Initial commit: Farcaster Dating App *)"
+      "Bash(git commit -m 'Initial commit: Farcaster Dating App *)",
+      "Read(//Users/nataladagaeva/.vercel/**)",
+      "Read(//Users/nataladagaeva/.config/vercel/**)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/nataladagaeva/Library/Application Support/com.vercel.cli/auth.json'\\)\\); print\\(d.get\\('token',''\\)\\)\")",
+      "Bash(curl -s https://api.vercel.com/v6/deployments?limit=3 -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(python3 -c \"import sys,json; [print\\(d['uid'], d.get\\('name',''\\), d.get\\('url',''\\)\\) for d in json.load\\(sys.stdin\\).get\\('deployments',[]\\)]\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \"import sys,json; u=json.load\\(sys.stdin\\).get\\('user',{}\\); print\\(u.get\\('username'\\), u.get\\('id'\\)\\)\")",
+      "Bash(curl -s https://api.vercel.com/v2/teams -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(curl -s 'https://api.vercel.com/v6/deployments?teamId=__TRACKED_VAR__&limit=3' -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(curl -s 'https://api.vercel.com/v2/deployments/__TRACKED_VAR__/events?teamId=__TRACKED_VAR__&limit=100&direction=backward' -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c 'import time; print\\(int\\(\\(time.time\\(\\)-3600\\)*1000\\)\\)')",
+      "Bash(curl -s 'https://api.vercel.com/v1/projects/prj_jScdxoK7lyWdSe6CSOFqf7m0Fl1I/function-logs?teamId=__TRACKED_VAR__&limit=50&since=__CMDSUB_OUTPUT__' -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(curl -s 'https://api.vercel.com/v1/logs?teamId=__TRACKED_VAR__&projectId=prj_jScdxoK7lyWdSe6CSOFqf7m0Fl1I&limit=50' -H 'Authorization: Bearer __CMDSUB_OUTPUT__')"
     ]
   }
 }
