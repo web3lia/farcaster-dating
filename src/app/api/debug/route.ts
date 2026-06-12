@@ -7,8 +7,8 @@ export async function GET() {
   // 1. Check env vars (masked)
   results.env = {
     SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? "✓ set" : "✗ MISSING",
-    SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "✓ set" : "✗ MISSING",
-    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? "✓ set" : "✗ MISSING",
+    SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ? "✓ set" : "✗ MISSING",
+    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SECRET_KEY ? "✓ set" : "✗ MISSING",
     NEYNAR_API_KEY: process.env.NEYNAR_API_KEY ? "✓ set" : "✗ MISSING",
   };
 
