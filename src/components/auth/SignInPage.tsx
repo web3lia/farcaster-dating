@@ -1,39 +1,57 @@
 "use client";
 
-import { SignInButton } from "@farcaster/auth-kit";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import sdk from "@farcaster/frame-sdk";
 import { useAuthStore } from "@/store/auth";
 import toast from "react-hot-toast";
 
 export function SignInPage() {
   const router = useRouter();
-  const { isAuthenticated: storeAuth } = useAuthStore();
+  const { isAuthenticated, setAuth } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [isInFrame, setIsInFrame] = useState(false);
 
   useEffect(() => {
-    if (storeAuth) router.replace("/swipe");
-  }, [storeAuth, router]);
+    if (isAuthenticated) router.replace("/swipe");
+  }, [isAuthenticated, router]);
 
-  async function handleSuccess(data: {
-    fid: number;
-    username: string;
-    displayName: string;
-    pfpUrl: string;
-    bio: string;
-    verifications: string[];
-  }) {
+  useEffect(() => {
+    // Detect if running inside Warpcast / Farcaster client
+    setIsInFrame(window.self !== window.top || !!window.parent?.frames?.length);
+  }, []);
+
+  async function handleSignIn() {
+    setLoading(true);
     try {
+      // 1. Get nonce from server
+      const nonceRes = await fetch("/api/auth/nonce");
+      const { nonce } = await nonceRes.json();
+
+      // 2. Sign in via Farcaster Frame SDK — works natively inside Warpcast
+      const { message, signature } = await sdk.actions.signIn({ nonce });
+
+      // 3. Send to server — extract FID and upsert profile
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ message, signature }),
       });
+
       if (!res.ok) throw new Error("Sign-in failed");
       const { profile } = await res.json();
-      useAuthStore.getState().setAuth(data.fid, profile);
+
+      setAuth(profile.fid, profile);
       router.replace("/swipe");
-    } catch {
-      toast.error("Sign-in failed. Please try again.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Sign-in failed";
+      if (msg.includes("rejected") || msg.includes("cancel")) {
+        toast.error("Sign-in cancelled");
+      } else {
+        toast.error("Sign-in failed. Make sure you're in Warpcast.");
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -64,13 +82,31 @@ export function SignInPage() {
         </ul>
 
         {/* Sign In */}
-        <div className="w-full flex flex-col items-center gap-4">
-          <SignInButton
-            onSuccess={({ fid, username, displayName, pfpUrl, bio, verifications }) =>
-              handleSuccess({ fid: fid!, username: username!, displayName: displayName!, pfpUrl: pfpUrl!, bio: bio!, verifications: verifications! })
-            }
-            onError={(err) => toast.error((err as { message?: string })?.message ?? "Sign-in error")}
-          />
+        <div className="w-full flex flex-col items-center gap-3">
+          <button
+            onClick={handleSignIn}
+            disabled={loading}
+            className="w-full py-4 px-6 bg-[#7C3AED] hover:bg-[#6D28D9] active:bg-[#5B21B6] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-lg rounded-2xl transition-colors shadow-lg flex items-center justify-center gap-3"
+          >
+            {loading ? (
+              <>
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Signing in…
+              </>
+            ) : (
+              <>
+                <span className="text-xl">⟡</span>
+                Sign in with Farcaster
+              </>
+            )}
+          </button>
+
+          {!isInFrame && (
+            <p className="text-xs text-amber-400 text-center px-2">
+              ⚠️ Open this app inside Warpcast for sign-in to work
+            </p>
+          )}
+
           <p className="text-xs text-gray-500 text-center">
             By signing in you agree to our Terms & Privacy Policy
           </p>
