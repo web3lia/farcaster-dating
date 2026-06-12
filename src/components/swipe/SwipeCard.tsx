@@ -56,8 +56,8 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        {/* Gradient overlay — darkens the lower area behind the name + buttons */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
         {/* LIKE badge */}
         <motion.div
@@ -83,8 +83,9 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
           SUPER
         </motion.div>
 
-        {/* Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+        {/* Info — anchored above the action-button band (nav 4rem + safe +
+            ~5.5rem button band) so the name/age/location never overlap them */}
+        <div className="absolute left-0 right-0 px-5 text-white bottom-[calc(4rem_+_env(safe-area-inset-bottom)_+_6rem)]">
           <div className="flex items-end justify-between gap-2">
             <div>
               <h2 className="text-2xl font-bold leading-tight">

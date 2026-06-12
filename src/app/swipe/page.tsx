@@ -80,9 +80,7 @@ export default function SwipePage() {
   const topProfile = stack[0] as Profile | undefined;
 
   return (
-    // pb keeps the whole column (card + action buttons) above the fixed
-    // BottomNav: nav height (h-16 = 4rem) + mobile safe-area inset
-    <div className="flex flex-col h-full safe-top pb-[calc(4rem_+_env(safe-area-inset-bottom))]">
+    <div className="flex flex-col h-full safe-top">
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-3 shrink-0">
         <h1 className="text-xl font-bold text-white">💜 Discover</h1>
@@ -136,14 +134,19 @@ export default function SwipePage() {
               })}
           </AnimatePresence>
         )}
-      </div>
 
-      {/* Action buttons — separate block below the card, so the profile name
-          (at the card's bottom) is always above them */}
-      <SwipeActions
-        onAction={(dir) => topProfile && handleSwipe(topProfile.fid, dir)}
-        disabled={!topProfile || swiping}
-      />
+        {/* Action buttons overlaid on the full-height card, lifted above the
+            fixed bottom nav. The card's name/info block (in SwipeCard) sits at
+            a higher bottom offset so it always stays above these. */}
+        {topProfile && !loading && (
+          <div className="absolute inset-x-0 z-30 bottom-[calc(4rem_+_env(safe-area-inset-bottom)_+_0.5rem)]">
+            <SwipeActions
+              onAction={(dir) => handleSwipe(topProfile.fid, dir)}
+              disabled={swiping}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Bottom nav */}
       <BottomNav />
