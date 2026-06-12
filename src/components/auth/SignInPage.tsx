@@ -1,6 +1,6 @@
 "use client";
 
-import { SignInButton, useProfile } from "@farcaster/auth-kit";
+import { SignInButton } from "@farcaster/auth-kit";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
@@ -9,7 +9,6 @@ import toast from "react-hot-toast";
 export function SignInPage() {
   const router = useRouter();
   const { isAuthenticated: storeAuth } = useAuthStore();
-  const { isAuthenticated, profile } = useProfile();
 
   useEffect(() => {
     if (storeAuth) router.replace("/swipe");
