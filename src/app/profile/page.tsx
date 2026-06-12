@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
 import toast from "react-hot-toast";
@@ -80,11 +80,9 @@ export default function ProfilePage() {
         {/* Avatar */}
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full overflow-hidden border-3 border-brand-500 shrink-0">
-            <Image
-              src={profile.pfp_url || "/placeholder-pfp.png"}
+            <Avatar
+              src={profile.pfp_url}
               alt={profile.display_name}
-              width={80}
-              height={80}
               className="object-cover w-full h-full"
             />
           </div>

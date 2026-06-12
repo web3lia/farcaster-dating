@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import type { Profile, SwipeDirection } from "@/types";
 import { MapPin as MapPinIcon } from "lucide-react";
 
@@ -50,13 +50,10 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
     >
       <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-gray-800">
         {/* Photo */}
-        <Image
-          src={profile.pfp_url || "/placeholder-pfp.png"}
+        <Avatar
+          src={profile.pfp_url}
           alt={profile.display_name}
-          fill
-          className="object-cover"
-          draggable={false}
-          priority={isTop}
+          className="absolute inset-0 w-full h-full object-cover"
         />
 
         {/* Gradient overlay */}

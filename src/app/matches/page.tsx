@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
 import type { Match } from "@/types";
@@ -62,11 +62,10 @@ export default function MatchesPage() {
                     className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-800/50 transition-colors text-left"
                   >
                     <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-brand-500">
-                      <Image
-                        src={other.pfp_url || "/placeholder-pfp.png"}
+                      <Avatar
+                        src={other.pfp_url}
                         alt={other.display_name}
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">

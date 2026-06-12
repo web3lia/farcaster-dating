@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { useRouter } from "next/navigation";
 import type { Match } from "@/types";
 import { useAuthStore } from "@/store/auth";
@@ -48,11 +48,9 @@ export function MatchModal({ match, onClose }: Props) {
               {[me, other].map((u, i) => (
                 <div key={i} className="relative">
                   <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-brand-500 shadow-lg">
-                    <Image
-                      src={u?.pfp_url || "/placeholder-pfp.png"}
+                    <Avatar
+                      src={u?.pfp_url}
                       alt={u?.display_name ?? ""}
-                      width={80}
-                      height={80}
                       className="object-cover w-full h-full"
                     />
                   </div>

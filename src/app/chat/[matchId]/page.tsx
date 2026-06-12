@@ -1,8 +1,8 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
 import type { Message } from "@/types";
@@ -82,7 +82,7 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
         {otherUser && (
           <>
             <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-brand-500">
-              <Image src={otherUser.pfp_url || "/placeholder-pfp.png"} alt="" width={36} height={36} className="object-cover" />
+              <Avatar src={otherUser.pfp_url} alt="" className="w-full h-full object-cover" />
             </div>
             <span className="font-semibold text-white">{otherUser.display_name}</span>
           </>
