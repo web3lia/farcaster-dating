@@ -20,13 +20,41 @@ export async function GET() {
       : "⚠ unknown format",
   };
 
-  // 2. Test Supabase connection
+  // 2. Test Supabase connection via supabase-js — dump FULL error object
   try {
     const supabase = createServiceClient();
-    const { error } = await supabase.from("profiles").select("fid").limit(1);
-    results.supabase = error ? `✗ ${error.message}` : "✓ connected";
+    const { data, error } = await supabase.from("profiles").select("fid").limit(1);
+    results.supabase_js = error
+      ? {
+          status: "✗ error",
+          message: error.message,
+          code: error.code,      // e.g. 42501 = insufficient_privilege (GRANT issue)
+          details: error.details,
+          hint: error.hint,
+        }
+      : { status: "✓ connected", rows: data?.length ?? 0 };
   } catch (e) {
-    results.supabase = `✗ ${e instanceof Error ? e.message : String(e)}`;
+    results.supabase_js = `✗ threw: ${e instanceof Error ? e.message : String(e)}`;
+  }
+
+  // 2b. Raw REST call — shows HTTP status + raw PostgREST body + which role it resolved
+  try {
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?select=fid&limit=1`;
+    const raw = await fetch(url, {
+      headers: {
+        apikey: secretKey,
+        Authorization: `Bearer ${secretKey}`,
+      },
+    });
+    const body = await raw.text();
+    results.supabase_raw = {
+      query: "SELECT fid FROM public.profiles LIMIT 1",
+      http_status: raw.status,                       // 200 ok, 401 bad key, 403/permission denied
+      role_resolved: raw.headers.get("content-profile") ?? "(none)",
+      body: body.slice(0, 500),
+    };
+  } catch (e) {
+    results.supabase_raw = `✗ threw: ${e instanceof Error ? e.message : String(e)}`;
   }
 
   // 3. Test FID parsing regex
