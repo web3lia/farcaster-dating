@@ -5,16 +5,31 @@ import { Providers } from "@/components/layout/Providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://localhost:3000";
+const APP_URL = "https://farcaster-dating.vercel.app";
 
 export const metadata: Metadata = {
   title: "Farcaster Dating",
   description: "Swipe, match and chat with Farcaster users",
+  openGraph: {
+    title: "Farcaster Dating",
+    description: "Swipe, match and chat with Farcaster users",
+    images: [`${APP_URL}/og.png`],
+  },
   other: {
+    // Farcaster Mini App embed tag — shown when link is shared in Warpcast
     "fc:frame": JSON.stringify({
       version: "next",
       imageUrl: `${APP_URL}/og.png`,
-      button: { title: "Open App", action: { type: "launch_frame", url: APP_URL } },
+      button: {
+        title: "💜 Find your match",
+        action: {
+          type: "launch_frame",
+          name: "Farcaster Dating",
+          url: APP_URL,
+          splashImageUrl: `${APP_URL}/splash.png`,
+          splashBackgroundColor: "#0f0f13",
+        },
+      },
     }),
   },
 };
