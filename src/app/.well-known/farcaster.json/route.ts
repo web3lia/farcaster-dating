@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 
+// Force dynamic — env vars must be read at request time, not build time
+export const dynamic = "force-dynamic";
+
 const APP_URL = "https://farcaster-dating.vercel.app";
 
 export async function GET() {
   return NextResponse.json({
     accountAssociation: {
-      // Generated at https://warpcast.com/~/developers/mini-apps
-      // Steps: Add domain → sign with Warpcast → paste header/payload/signature here
       header: process.env.FARCASTER_HEADER ?? "",
       payload: process.env.FARCASTER_PAYLOAD ?? "",
       signature: process.env.FARCASTER_SIGNATURE ?? "",

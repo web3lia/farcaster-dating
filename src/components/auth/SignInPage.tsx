@@ -3,52 +3,67 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import sdk from "@farcaster/frame-sdk";
+import { useFrame } from "@/components/layout/FrameProvider";
 import { useAuthStore } from "@/store/auth";
 import toast from "react-hot-toast";
 
 export function SignInPage() {
   const router = useRouter();
   const { isAuthenticated, setAuth } = useAuthStore();
+  const { isReady, context } = useFrame();
   const [loading, setLoading] = useState(false);
-  const [isInFrame, setIsInFrame] = useState(false);
+
+  const isInFrame = !!context?.user?.fid;
 
   useEffect(() => {
     if (isAuthenticated) router.replace("/swipe");
   }, [isAuthenticated, router]);
 
+  // Auto sign-in if SDK already has the user context (returning user in Warpcast)
   useEffect(() => {
-    // Detect if running inside Warpcast / Farcaster client
-    setIsInFrame(window.self !== window.top || !!window.parent?.frames?.length);
-  }, []);
+    if (isReady && isInFrame && !isAuthenticated) {
+      handleSignIn();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, isInFrame]);
 
   async function handleSignIn() {
+    if (!isReady) {
+      toast.error("SDK not ready yet, please wait…");
+      return;
+    }
     setLoading(true);
     try {
-      // 1. Get nonce from server
+      // 1. Get nonce
       const nonceRes = await fetch("/api/auth/nonce");
       const { nonce } = await nonceRes.json();
 
-      // 2. Sign in via Farcaster Frame SDK — works natively inside Warpcast
+      // 2. signIn — only works after sdk.actions.ready() has been called
       const { message, signature } = await sdk.actions.signIn({ nonce });
 
-      // 3. Send to server — extract FID and upsert profile
+      // 3. Verify on server + upsert profile
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, signature }),
       });
 
-      if (!res.ok) throw new Error("Sign-in failed");
-      const { profile } = await res.json();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Sign-in failed");
+      }
 
+      const { profile } = await res.json();
       setAuth(profile.fid, profile);
       router.replace("/swipe");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Sign-in failed";
-      if (msg.includes("rejected") || msg.includes("cancel")) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("rejected") || msg.includes("cancel") || msg.includes("denied")) {
         toast.error("Sign-in cancelled");
+      } else if (msg.includes("not supported") || msg.includes("undefined")) {
+        toast.error("Open this app inside Warpcast to sign in");
       } else {
-        toast.error("Sign-in failed. Make sure you're in Warpcast.");
+        toast.error(msg || "Sign-in failed");
       }
     } finally {
       setLoading(false);
@@ -85,10 +100,15 @@ export function SignInPage() {
         <div className="w-full flex flex-col items-center gap-3">
           <button
             onClick={handleSignIn}
-            disabled={loading}
+            disabled={loading || !isReady}
             className="w-full py-4 px-6 bg-[#7C3AED] hover:bg-[#6D28D9] active:bg-[#5B21B6] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-lg rounded-2xl transition-colors shadow-lg flex items-center justify-center gap-3"
           >
-            {loading ? (
+            {!isReady ? (
+              <>
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Loading…
+              </>
+            ) : loading ? (
               <>
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Signing in…
@@ -101,7 +121,7 @@ export function SignInPage() {
             )}
           </button>
 
-          {!isInFrame && (
+          {isReady && !isInFrame && (
             <p className="text-xs text-amber-400 text-center px-2">
               ⚠️ Open this app inside Warpcast for sign-in to work
             </p>
