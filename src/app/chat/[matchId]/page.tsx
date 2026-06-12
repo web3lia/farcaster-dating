@@ -29,7 +29,13 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` },
-        (payload) => setMessages((prev) => [...prev, payload.new as Message])
+        (payload) => {
+          const incoming = payload.new as Message;
+          // Dedupe by id — our own message is already appended from the POST response
+          setMessages((prev) =>
+            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+          );
+        }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -62,11 +68,24 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
     const content = input.trim();
     setInput("");
     try {
-      await fetch("/api/messages", {
+      const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ match_id: matchId, sender_fid: fid, content }),
       });
+      const data = await res.json();
+      // Append immediately from the API response — don't wait on realtime.
+      // Realtime handler dedupes by id, so no double-add when it echoes back.
+      if (data.message) {
+        setMessages((prev) =>
+          prev.some((m) => m.id === data.message.id) ? prev : [...prev, data.message]
+        );
+      } else {
+        // Insert failed — restore the input so the user doesn't lose their text
+        setInput(content);
+      }
+    } catch {
+      setInput(content);
     } finally {
       setSending(false);
     }
