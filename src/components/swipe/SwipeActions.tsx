@@ -8,7 +8,8 @@ interface Props {
   disabled?: boolean;
 }
 
-const BTN = "flex items-center justify-center rounded-full shadow-lg active:scale-90 transition-transform disabled:opacity-30";
+// Semi-transparent fill + blur so the buttons feel light over the card/background
+const BTN = "flex items-center justify-center rounded-full shadow-lg backdrop-blur-sm active:scale-90 transition-transform disabled:opacity-30";
 
 export function SwipeActions({ onAction, disabled }: Props) {
   return (
@@ -17,7 +18,7 @@ export function SwipeActions({ onAction, disabled }: Props) {
         whileTap={{ scale: 0.88 }}
         disabled={disabled}
         onClick={() => onAction("left")}
-        className={`${BTN} w-14 h-14 bg-gray-800 border-2 border-nope text-nope text-2xl`}
+        className={`${BTN} w-14 h-14 bg-gray-800/60 border-2 border-nope text-nope text-2xl`}
         aria-label="Nope"
       >
         ✕
@@ -27,7 +28,7 @@ export function SwipeActions({ onAction, disabled }: Props) {
         whileTap={{ scale: 0.88 }}
         disabled={disabled}
         onClick={() => onAction("up")}
-        className={`${BTN} w-11 h-11 bg-gray-800 border-2 border-blue-400 text-blue-400 text-lg`}
+        className={`${BTN} w-11 h-11 bg-gray-800/60 border-2 border-blue-400 text-blue-400 text-lg`}
         aria-label="Super Like"
       >
         ⭐
@@ -37,7 +38,7 @@ export function SwipeActions({ onAction, disabled }: Props) {
         whileTap={{ scale: 0.88 }}
         disabled={disabled}
         onClick={() => onAction("right")}
-        className={`${BTN} w-14 h-14 bg-gray-800 border-2 border-like text-like text-2xl`}
+        className={`${BTN} w-14 h-14 bg-gray-800/60 border-2 border-like text-like text-2xl`}
         aria-label="Like"
       >
         ♥
