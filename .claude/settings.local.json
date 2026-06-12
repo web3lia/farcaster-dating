@@ -30,7 +30,8 @@
       "Bash(sed -n '60,72p' src/app/matches/page.tsx)",
       "Bash(sed -n '80,92p' src/app/profile/page.tsx)",
       "Bash(sed -n '48,62p' src/components/swipe/SwipeCard.tsx)",
-      "Bash(sed -n '46,60p' src/components/swipe/MatchModal.tsx)"
+      "Bash(sed -n '46,60p' src/components/swipe/MatchModal.tsx)",
+      "Bash(cd /Users/nataladagaeva/Desktop/farcaster-dating *)"
     ]
   }
 }
