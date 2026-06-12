@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
     .select("swiped_fid")
     .eq("swiper_fid", currentFid);
 
-  const swipedFids = (swiped ?? []).map((s) => s.swiped_fid);
+  const swipedFids = (swiped ?? []).map((s: { swiped_fid: number }) => s.swiped_fid);
   swipedFids.push(currentFid); // exclude self
 
   const { data: profiles, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("show_in_discovery", true)
-    .not("fid", "in", `(${swipedFids.join(",")})`)
+    .not("fid", "in", `(${swipedFids.join(",")})` as string)
     .order("follower_count", { ascending: false })
     .limit(20);
 

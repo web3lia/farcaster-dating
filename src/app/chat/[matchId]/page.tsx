@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
 import type { Message } from "@/types";
-import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/solid";
+import { ArrowLeft, SendHorizontal as PaperAirplaneIcon } from "lucide-react";
+const ArrowLeftIcon = ArrowLeft;
 
 export default function ChatPage({ params }: { params: Promise<{ matchId: string }> }) {
   const { matchId } = use(params);

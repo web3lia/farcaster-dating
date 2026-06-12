@@ -16,6 +16,7 @@
     "@supabase/supabase-js": "^2.43.0",
     "autoprefixer": "^10.5.0",
     "framer-motion": "^11.2.10",
+    "lucide-react": "^1.17.0",
     "next": "14.2.30",
     "react": "^18",
     "react-dom": "^18",

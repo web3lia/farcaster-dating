@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import Image from "next/image";
 import type { Profile, SwipeDirection } from "@/types";
-import { MapPinIcon } from "@heroicons/react/24/outline";
+import { MapPin as MapPinIcon } from "lucide-react";
 
 const SWIPE_THRESHOLD = 100;
 

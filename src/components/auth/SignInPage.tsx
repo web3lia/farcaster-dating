@@ -70,7 +70,7 @@ export function SignInPage() {
             onSuccess={({ fid, username, displayName, pfpUrl, bio, verifications }) =>
               handleSuccess({ fid: fid!, username: username!, displayName: displayName!, pfpUrl: pfpUrl!, bio: bio!, verifications: verifications! })
             }
-            onError={(err) => toast.error(err.message ?? "Sign-in error")}
+            onError={(err) => toast.error((err as { message?: string })?.message ?? "Sign-in error")}
           />
           <p className="text-xs text-gray-500 text-center">
             By signing in you agree to our Terms & Privacy Policy

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeartIcon, ChatBubbleLeftRightIcon, UserCircleIcon } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartSolid, ChatBubbleLeftRightIcon as ChatSolid, UserCircleIcon as UserSolid } from "@heroicons/react/24/solid";
+import { Heart, MessageCircle, UserCircle } from "lucide-react";
+const HeartIcon = Heart, ChatBubbleLeftRightIcon = MessageCircle, UserCircleIcon = UserCircle;
+const HeartSolid = Heart, ChatSolid = MessageCircle, UserSolid = UserCircle;
 
 const links = [
   { href: "/swipe", label: "Discover", Icon: HeartIcon, ActiveIcon: HeartSolid },
