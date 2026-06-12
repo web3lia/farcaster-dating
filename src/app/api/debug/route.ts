@@ -5,11 +5,19 @@ export async function GET() {
   const results: Record<string, unknown> = {};
 
   // 1. Check env vars (masked)
+  const secretKey = process.env.SUPABASE_SECRET_KEY ?? "";
+  const pubKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
   results.env = {
-    SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? "✓ set" : "✗ MISSING",
-    SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ? "✓ set" : "✗ MISSING",
-    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SECRET_KEY ? "✓ set" : "✗ MISSING",
+    SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "✗ MISSING",
+    // Show last 6 chars so you can verify correct key without exposing it
+    SUPABASE_PUBLISHABLE_KEY: pubKey ? `✓ ...${pubKey.slice(-6)}` : "✗ MISSING",
+    SUPABASE_SECRET_KEY: secretKey ? `✓ ...${secretKey.slice(-6)}` : "✗ MISSING",
     NEYNAR_API_KEY: process.env.NEYNAR_API_KEY ? "✓ set" : "✗ MISSING",
+    // Detect if secret key looks like anon key (both present = likely swapped)
+    KEY_TYPE_HINT: secretKey.startsWith("sb_secret_") ? "✓ looks like service key"
+      : secretKey.startsWith("sb_publishable_") ? "✗ THIS IS ANON KEY — keys are swapped!"
+      : secretKey.length > 100 ? "✓ looks like JWT service key"
+      : "⚠ unknown format",
   };
 
   // 2. Test Supabase connection
