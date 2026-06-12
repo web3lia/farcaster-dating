@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
@@ -9,8 +9,8 @@ import type { Message } from "@/types";
 import { ArrowLeft, SendHorizontal as PaperAirplaneIcon } from "lucide-react";
 const ArrowLeftIcon = ArrowLeft;
 
-export default function ChatPage({ params }: { params: Promise<{ matchId: string }> }) {
-  const { matchId } = use(params);
+export default function ChatPage({ params }: { params: { matchId: string } }) {
+  const { matchId } = params;
   const router = useRouter();
   const { fid, profile } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([]);
