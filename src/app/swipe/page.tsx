@@ -80,7 +80,9 @@ export default function SwipePage() {
   const topProfile = stack[0] as Profile | undefined;
 
   return (
-    <div className="flex flex-col h-full safe-top">
+    // pb = BottomNav height (h-16 = 4rem) + mobile safe-area, so action
+    // buttons clear the fixed bottom nav instead of hiding behind it
+    <div className="flex flex-col h-full safe-top pb-[calc(4rem_+_env(safe-area-inset-bottom))]">
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-3 shrink-0">
         <h1 className="text-xl font-bold text-white">💜 Discover</h1>
