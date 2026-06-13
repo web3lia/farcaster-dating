@@ -4,7 +4,7 @@ grant usage on schema public to anon, authenticated, service_role;
 
 -- Grant table permissions
 grant select, insert, update on public.profiles  to anon, authenticated, service_role;
-grant select, insert         on public.swipes     to anon, authenticated, service_role;
+grant select, insert, update on public.swipes     to anon, authenticated, service_role;  -- update: swipe upsert (change like<->nope)
 grant select, insert         on public.matches    to anon, authenticated, service_role;
 grant select, insert, update on public.messages   to anon, authenticated, service_role;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuthStore } from "@/store/auth";
@@ -18,6 +18,9 @@ export default function SwipePage() {
   const { stack, setStack, removeTop, currentMatch, setCurrentMatch } = useSwipeStore();
   const [loading, setLoading] = useState(false);
   const [swiping, setSwiping] = useState(false);
+  // Fids swiped this session — filtered out of every fetched deck so an
+  // already-swiped card can never reappear, even if the server lags.
+  const swipedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
@@ -34,7 +37,17 @@ export default function SwipePage() {
     try {
       const res = await fetch(`/api/profiles?fid=${fid}`);
       const data = await res.json();
-      setStack(data.profiles ?? []);
+      const incoming: Profile[] = data.profiles ?? [];
+      // Merge into the current stack: keep what's there, append only new
+      // profiles, and drop anything already swiped this session. No wholesale
+      // replace → no flicker, and swiped cards stay out of the deck.
+      const current = useSwipeStore.getState().stack;
+      const seen = new Set(current.map((p) => p.fid));
+      const merged = [
+        ...current,
+        ...incoming.filter((p) => !seen.has(p.fid)),
+      ].filter((p) => !swipedRef.current.has(p.fid));
+      setStack(merged);
     } catch {
       toast.error("Failed to load profiles");
     } finally {
@@ -50,6 +63,9 @@ export default function SwipePage() {
       const apiDir =
         direction === "right" ? "like" : direction === "up" ? "superlike" : "nope";
 
+      // Mark as swiped up front so it's filtered from any deck refetch,
+      // regardless of whether the network call below succeeds.
+      swipedRef.current.add(profileFid);
       removeTop();
 
       try {
@@ -63,18 +79,20 @@ export default function SwipePage() {
           }),
         });
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Swipe failed");
         if (data.match) setCurrentMatch(data.match);
       } catch {
-        // non-critical
+        // Surface the failure instead of hiding it — the swipe didn't persist
+        toast.error("Couldn't save that swipe");
       } finally {
         setSwiping(false);
       }
 
-      // Refetch when stack runs low
-      if (stack.length <= 3) fetchProfiles();
+      // Refetch when stack runs low (use live length, not the stale closure)
+      if (useSwipeStore.getState().stack.length <= 3) fetchProfiles();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fid, swiping, stack.length]
+    [fid, swiping]
   );
 
   const topProfile = stack[0] as Profile | undefined;
