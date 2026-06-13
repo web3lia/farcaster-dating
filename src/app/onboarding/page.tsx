@@ -39,7 +39,7 @@ export default function OnboardingPage() {
       updateProfile(data.profile);
     } catch {
       // Non-blocking: onboarding shouldn't trap the user if the save hiccups
-      toast.error("Не удалось сохранить — можно изменить позже в профиле");
+      toast.error("Couldn't save — you can change this later in your profile");
     } finally {
       setOnboarded(true);
       setSaving(false);
@@ -61,14 +61,14 @@ export default function OnboardingPage() {
           <span className={`h-1.5 w-8 rounded-full ${step >= 2 ? "bg-brand-500" : "bg-gray-700"}`} />
         </div>
         <button onClick={skipAll} className="text-sm text-gray-400">
-          Пропустить
+          Skip
         </button>
       </div>
 
       {step === 1 ? (
         <div className="flex-1 flex flex-col">
-          <h1 className="text-2xl font-bold text-white">Что ты ищешь?</h1>
-          <p className="text-gray-400 text-sm mt-1 mb-6">Можно поменять в любой момент</p>
+          <h1 className="text-2xl font-bold text-white">What are you looking for?</h1>
+          <p className="text-gray-400 text-sm mt-1 mb-6">You can change this anytime</p>
 
           <div className="space-y-3">
             {INTENTS.map((meta) => {
@@ -101,26 +101,26 @@ export default function OnboardingPage() {
               onClick={() => setStep(2)}
               className="w-full py-4 bg-brand-600 text-white font-bold rounded-2xl text-lg"
             >
-              Далее
+              Next
             </button>
           </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col">
-          <h1 className="text-2xl font-bold text-white">Немного о тебе</h1>
-          <p className="text-gray-400 text-sm mt-1 mb-6">Оба поля можно пропустить</p>
+          <h1 className="text-2xl font-bold text-white">A bit about you</h1>
+          <p className="text-gray-400 text-sm mt-1 mb-6">Both fields are optional</p>
 
           <div className="space-y-5">
             <div>
               <label className="flex justify-between text-xs text-gray-400 mb-1.5">
-                <span>Расскажи о себе</span>
+                <span>About you</span>
                 <span>{about.length}/{ABOUT_MAX}</span>
               </label>
               <textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value.slice(0, ABOUT_MAX))}
                 rows={4}
-                placeholder="Чем занимаешься, что интересно…"
+                placeholder="What you do, what you're into…"
                 className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               />
             </div>
@@ -134,7 +134,7 @@ export default function OnboardingPage() {
                 value={promptAnswer}
                 onChange={(e) => setPromptAnswer(e.target.value.slice(0, PROMPT_MAX))}
                 rows={3}
-                placeholder="Над чем работаешь прямо сейчас…"
+                placeholder="What you're working on right now…"
                 className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               />
             </div>
@@ -145,14 +145,14 @@ export default function OnboardingPage() {
               onClick={() => setStep(1)}
               className="px-5 py-4 text-gray-400 font-semibold"
             >
-              Назад
+              Back
             </button>
             <button
               onClick={finish}
               disabled={saving}
               className="flex-1 py-4 bg-brand-600 text-white font-bold rounded-2xl text-lg disabled:opacity-50"
             >
-              {saving ? "Сохраняю…" : "Готово"}
+              {saving ? "Saving…" : "Done"}
             </button>
           </div>
         </div>
