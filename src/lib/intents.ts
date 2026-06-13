@@ -47,6 +47,8 @@ export const DEFAULT_INTENT: Intent = "networking";
 
 // The single guided prompt (Stage 2/3/4)
 export const PROMPT_LABEL = "What I'm building right now…";
+// Short inline label used on the swipe card, e.g. "Building: ..."
+export const PROMPT_SHORT = "Building";
 
 export const ABOUT_MAX = 300;
 export const PROMPT_MAX = 200;

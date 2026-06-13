@@ -5,6 +5,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Profile, SwipeDirection } from "@/types";
 import { MapPin as MapPinIcon } from "lucide-react";
+import { INTENT_MAP, DEFAULT_INTENT, PROMPT_SHORT } from "@/lib/intents";
 
 const SWIPE_THRESHOLD = 100;
 
@@ -24,6 +25,7 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
   const superlikeOpacity = useTransform(y, [-SWIPE_THRESHOLD, 0], [1, 0]);
 
   const [expanded, setExpanded] = useState(false);
+  const intentMeta = INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT];
 
   function handleDragEnd(_: unknown, info: PanInfo) {
     if (info.offset.x > SWIPE_THRESHOLD) {
@@ -58,6 +60,14 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
 
         {/* Gradient overlay — darkens the lower area behind the name + buttons */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+        {/* Intent badge — the person's goal, colored pill over the photo */}
+        <div
+          className={`absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-lg backdrop-blur-sm ${intentMeta.badgeClass}`}
+        >
+          <span className="text-sm leading-none">{intentMeta.emoji}</span>
+          <span>{intentMeta.label}</span>
+        </div>
 
         {/* LIKE badge */}
         <motion.div
@@ -108,6 +118,21 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
               {expanded ? "↑" : "↓"}
             </button>
           </div>
+
+          {/* About — shown under the name when filled */}
+          {profile.about && (
+            <p className="mt-2 text-sm text-gray-200 leading-snug line-clamp-2">
+              {profile.about}
+            </p>
+          )}
+
+          {/* Guided prompt answer, e.g. "Building: ..." */}
+          {profile.prompt_answer && (
+            <p className="mt-1.5 text-xs text-gray-300 line-clamp-2">
+              <span className="font-semibold text-white">🛠 {PROMPT_SHORT}:</span>{" "}
+              {profile.prompt_answer}
+            </p>
+          )}
 
           {expanded && (
             <div className="mt-3 space-y-2 animate-fade-up">
