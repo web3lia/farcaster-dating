@@ -10,6 +10,8 @@ export interface FarcasterUser {
   activeStatus: "active" | "inactive";
 }
 
+export type Intent = "romance" | "friendship" | "networking";
+
 export interface Profile {
   id: string;
   fid: number;
@@ -25,6 +27,9 @@ export interface Profile {
   interests: string[];
   location?: string;
   show_in_discovery: boolean;
+  intent: Intent;
+  about: string;
+  prompt_answer: string;
   created_at: string;
   updated_at: string;
 }

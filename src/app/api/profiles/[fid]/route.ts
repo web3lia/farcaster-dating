@@ -9,7 +9,10 @@ export async function PATCH(
   const body = await req.json();
   const supabase = createServiceClient();
 
-  const allowed = ["bio", "age", "location", "interests", "looking_for", "show_in_discovery"];
+  const allowed = [
+    "bio", "age", "location", "interests", "looking_for", "show_in_discovery",
+    "intent", "about", "prompt_answer",
+  ];
   const update: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) update[key] = body[key];

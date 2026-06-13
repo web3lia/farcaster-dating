@@ -9,15 +9,18 @@ import toast from "react-hot-toast";
 
 export function SignInPage() {
   const router = useRouter();
-  const { isAuthenticated, setAuth } = useAuthStore();
+  const { isAuthenticated, onboarded, setAuth } = useAuthStore();
   const { isReady, context } = useFrame();
   const [loading, setLoading] = useState(false);
 
   const isInFrame = !!context?.user?.fid;
 
+  // New users (not yet onboarded) go through the intent onboarding first
+  const destAfterAuth = onboarded ? "/swipe" : "/onboarding";
+
   useEffect(() => {
-    if (isAuthenticated) router.replace("/swipe");
-  }, [isAuthenticated, router]);
+    if (isAuthenticated) router.replace(destAfterAuth);
+  }, [isAuthenticated, router, destAfterAuth]);
 
   // Auto sign-in if SDK already has the user context (returning user in Warpcast)
   useEffect(() => {
@@ -56,7 +59,7 @@ export function SignInPage() {
 
       const { profile } = await res.json();
       setAuth(profile.fid, profile);
-      router.replace("/swipe");
+      router.replace(destAfterAuth);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("rejected") || msg.includes("cancel") || msg.includes("denied")) {

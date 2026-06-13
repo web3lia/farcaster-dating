@@ -25,6 +25,9 @@ export interface Database {
           interests: string[];
           location: string | null;
           show_in_discovery: boolean;
+          intent: string;
+          about: string;
+          prompt_answer: string;
           created_at: string;
           updated_at: string;
         };
