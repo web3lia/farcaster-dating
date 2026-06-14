@@ -28,16 +28,16 @@ export async function performSignIn(): Promise<{ fid: number }> {
   const { profile, session } = await res.json();
   useAuthStore.getState().setAuth(profile.fid, profile);
 
-  if (session?.access_token && session?.refresh_token) {
-    try {
-      await createClient().auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-    } catch {
-      /* non-blocking — store auth still set */
-    }
+  if (!session?.access_token || !session?.refresh_token) {
+    throw new Error("no session in signin response");
   }
+
+  // TEMP: let setSession errors propagate so we can see them
+  const { error } = await createClient().auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  if (error) throw new Error("setSession: " + error.message);
 
   return { fid: profile.fid };
 }
@@ -67,7 +67,11 @@ export async function ensureAccessToken(): Promise<string | null> {
   if (!inflightSignIn) {
     inflightSignIn = performSignIn()
       .then(() => undefined)
-      .catch(() => undefined)
+      .catch((e) => {
+        // TEMP diagnostic: surface why establishing the session failed
+        const msg = e instanceof Error ? e.message : String(e);
+        import("react-hot-toast").then((m) => m.default.error("Auth: " + msg));
+      })
       .finally(() => {
         inflightSignIn = null;
       });
