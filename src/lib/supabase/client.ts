@@ -1,11 +1,12 @@
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// Singleton browser client with localStorage persistence. We intentionally do
-// NOT use @supabase/ssr's cookie-based createBrowserClient: in the Warpcast
-// mini-app webview cookies don't reliably round-trip, so the session would be
-// written but never read back (breaking authFetch + RLS realtime). A single
-// shared instance keeps the session in memory across client navigation, and
-// localStorage persists it across reloads.
+// Singleton browser client. We keep the session purely IN MEMORY
+// (persistSession: false): the Warpcast mini-app webview's localStorage/cookies
+// are unreliable — writes can throw and break setSession, and storage may be
+// cleared between opens. An in-memory singleton holds the session for the
+// lifetime of the app open (shared across client navigation); it's
+// re-established on demand by ensureAccessToken when missing. autoRefreshToken
+// keeps the in-memory token fresh.
 let client: SupabaseClient | undefined;
 
 export function createClient(): SupabaseClient {
@@ -15,9 +16,8 @@ export function createClient(): SupabaseClient {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       {
         auth: {
-          persistSession: true,
+          persistSession: false,
           autoRefreshToken: true,
-          storageKey: "farcaster-dating-supabase-auth",
         },
       }
     );

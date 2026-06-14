@@ -78,12 +78,13 @@ export default function SwipePage() {
             direction: apiDir,
           }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Swipe failed");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(`${res.status} ${data.error ?? ""}`.trim());
         if (data.match) setCurrentMatch(data.match);
-      } catch {
-        // Surface the failure instead of hiding it — the swipe didn't persist
-        toast.error("Couldn't save that swipe");
+      } catch (e) {
+        // TEMP diagnostic: surface the real status/error so we can see whether
+        // it's 401 (no token) vs 403 (RLS) vs 500.
+        toast.error(`Swipe failed: ${e instanceof Error ? e.message : "unknown"}`);
       } finally {
         setSwiping(false);
       }
