@@ -44,6 +44,14 @@ export const INTENT_MAP: Record<Intent, IntentMeta> = INTENTS.reduce(
 );
 
 export const DEFAULT_INTENT: Intent = "networking";
+export const DEFAULT_INTENTS: Intent[] = ["networking"];
+
+/** Resolve a profile's intents to displayable metas; falls back to the
+ *  default if the list is empty or missing. */
+export function intentsToMetas(intents: Intent[] | null | undefined): IntentMeta[] {
+  const list = intents && intents.length > 0 ? intents : DEFAULT_INTENTS;
+  return list.map((id) => INTENT_MAP[id]).filter(Boolean);
+}
 
 // The single guided prompt (Stage 2/3/4)
 export const PROMPT_LABEL = "What I'm building right now…";

@@ -5,7 +5,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Profile, SwipeDirection } from "@/types";
 import { MapPin as MapPinIcon } from "lucide-react";
-import { INTENT_MAP, DEFAULT_INTENT, PROMPT_SHORT } from "@/lib/intents";
+import { intentsToMetas, PROMPT_SHORT } from "@/lib/intents";
 
 const SWIPE_THRESHOLD = 100;
 
@@ -25,7 +25,7 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
   const superlikeOpacity = useTransform(y, [-SWIPE_THRESHOLD, 0], [1, 0]);
 
   const [expanded, setExpanded] = useState(false);
-  const intentMeta = INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT];
+  const intentMetas = intentsToMetas(profile.intents);
 
   function handleDragEnd(_: unknown, info: PanInfo) {
     if (info.offset.x > SWIPE_THRESHOLD) {
@@ -61,12 +61,17 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
         {/* Gradient overlay — darkens the lower area behind the name + buttons */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-        {/* Intent badge — the person's goal, colored pill over the photo */}
-        <div
-          className={`absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-lg backdrop-blur-sm ${intentMeta.badgeClass}`}
-        >
-          <span className="text-sm leading-none">{intentMeta.emoji}</span>
-          <span>{intentMeta.label}</span>
+        {/* Intent badges — the person's goals, colored pills over the photo */}
+        <div className="absolute top-4 left-4 flex flex-col items-start gap-1.5">
+          {intentMetas.map((meta) => (
+            <div
+              key={meta.id}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-lg backdrop-blur-sm ${meta.badgeClass}`}
+            >
+              <span className="text-sm leading-none">{meta.emoji}</span>
+              <span>{meta.label}</span>
+            </div>
+          ))}
         </div>
 
         {/* LIKE badge */}

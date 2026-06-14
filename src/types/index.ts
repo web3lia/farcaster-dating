@@ -27,7 +27,7 @@ export interface Profile {
   interests: string[];
   location?: string;
   show_in_discovery: boolean;
-  intent: Intent;
+  intents: Intent[];
   about: string;
   prompt_answer: string;
   created_at: string;

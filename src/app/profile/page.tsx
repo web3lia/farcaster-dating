@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { INTENTS, INTENT_MAP, DEFAULT_INTENT, PROMPT_LABEL, PROMPT_SHORT, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
+import { INTENTS, DEFAULT_INTENTS, intentsToMetas, PROMPT_LABEL, PROMPT_SHORT, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
 import type { Intent } from "@/types";
 import toast from "react-hot-toast";
 
@@ -21,7 +21,7 @@ export default function ProfilePage() {
     location: profile?.location ?? "",
     interests: profile?.interests ?? [] as string[],
     looking_for: profile?.looking_for ?? "",
-    intent: (profile?.intent ?? DEFAULT_INTENT) as Intent,
+    intents: (profile?.intents ?? []) as Intent[],
     about: profile?.about ?? "",
     prompt_answer: profile?.prompt_answer ?? "",
   });
@@ -30,6 +30,15 @@ export default function ProfilePage() {
   if (!profile) {
     router.replace("/");
     return null;
+  }
+
+  function toggleIntent(id: Intent) {
+    setForm((f) => ({
+      ...f,
+      intents: f.intents.includes(id)
+        ? f.intents.filter((x) => x !== id)
+        : [...f.intents, id],
+    }));
   }
 
   function toggleInterest(tag: string) {
@@ -54,7 +63,7 @@ export default function ProfilePage() {
           location: form.location,
           interests: form.interests,
           looking_for: form.looking_for,
-          intent: form.intent,
+          intents: form.intents.length > 0 ? form.intents : DEFAULT_INTENTS,
           about: form.about.trim().slice(0, ABOUT_MAX),
           prompt_answer: form.prompt_answer.trim().slice(0, PROMPT_MAX),
         }),
@@ -107,15 +116,15 @@ export default function ProfilePage() {
           <div className="space-y-4">
             {/* Intent / goal */}
             <div>
-              <label className="text-xs text-gray-400 mb-2 block">I'm here for</label>
+              <label className="text-xs text-gray-400 mb-2 block">I'm here for (pick one or more)</label>
               <div className="space-y-2">
                 {INTENTS.map((meta) => {
-                  const active = form.intent === meta.id;
+                  const active = form.intents.includes(meta.id);
                   return (
                     <button
                       key={meta.id}
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, intent: meta.id }))}
+                      onClick={() => toggleIntent(meta.id)}
                       className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-colors ${
                         active ? meta.selectedClass : "border-gray-800 bg-gray-900/50"
                       }`}
@@ -126,10 +135,12 @@ export default function ProfilePage() {
                         <p className="text-xs text-gray-400">{meta.description}</p>
                       </div>
                       <span
-                        className={`w-4 h-4 rounded-full border-2 shrink-0 ${
-                          active ? "border-brand-500 bg-brand-500" : "border-gray-600"
+                        className={`w-4 h-4 rounded-md border-2 shrink-0 flex items-center justify-center text-[10px] ${
+                          active ? "border-brand-500 bg-brand-500 text-white" : "border-gray-600"
                         }`}
-                      />
+                      >
+                        {active ? "✓" : ""}
+                      </span>
                     </button>
                   );
                 })}
@@ -226,16 +237,17 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Intent badge */}
-            <div
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold ${
-                (INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT]).badgeClass
-              }`}
-            >
-              <span className="text-sm leading-none">
-                {(INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT]).emoji}
-              </span>
-              <span>{(INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT]).label}</span>
+            {/* Intent badges */}
+            <div className="flex flex-wrap gap-2">
+              {intentsToMetas(profile.intents).map((meta) => (
+                <div
+                  key={meta.id}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold ${meta.badgeClass}`}
+                >
+                  <span className="text-sm leading-none">{meta.emoji}</span>
+                  <span>{meta.label}</span>
+                </div>
+              ))}
             </div>
 
             {profile.about && (

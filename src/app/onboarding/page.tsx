@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
-import { INTENTS, DEFAULT_INTENT, PROMPT_LABEL, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
+import { INTENTS, DEFAULT_INTENTS, PROMPT_LABEL, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
 import type { Intent } from "@/types";
 import toast from "react-hot-toast";
 
@@ -12,7 +12,7 @@ export default function OnboardingPage() {
   const { fid, isAuthenticated, profile, updateProfile, setOnboarded } = useAuthStore();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [intent, setIntent] = useState<Intent>(profile?.intent ?? DEFAULT_INTENT);
+  const [intents, setIntents] = useState<Intent[]>(profile?.intents ?? []);
   const [about, setAbout] = useState(profile?.about ?? "");
   const [promptAnswer, setPromptAnswer] = useState(profile?.prompt_answer ?? "");
   const [saving, setSaving] = useState(false);
@@ -20,6 +20,12 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
+
+  function toggleIntent(id: Intent) {
+    setIntents((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   async function finish() {
     if (!fid || saving) return;
@@ -29,7 +35,8 @@ export default function OnboardingPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          intent,
+          // Fall back to the default goal if nothing was picked
+          intents: intents.length > 0 ? intents : DEFAULT_INTENTS,
           about: about.trim().slice(0, ABOUT_MAX),
           prompt_answer: promptAnswer.trim().slice(0, PROMPT_MAX),
         }),
@@ -68,15 +75,15 @@ export default function OnboardingPage() {
       {step === 1 ? (
         <div className="flex-1 flex flex-col">
           <h1 className="text-2xl font-bold text-white">What are you looking for?</h1>
-          <p className="text-gray-400 text-sm mt-1 mb-6">You can change this anytime</p>
+          <p className="text-gray-400 text-sm mt-1 mb-6">Pick one or more — change anytime</p>
 
           <div className="space-y-3">
             {INTENTS.map((meta) => {
-              const active = intent === meta.id;
+              const active = intents.includes(meta.id);
               return (
                 <button
                   key={meta.id}
-                  onClick={() => setIntent(meta.id)}
+                  onClick={() => toggleIntent(meta.id)}
                   className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-colors ${
                     active ? meta.selectedClass : "border-gray-800 bg-gray-900/50"
                   }`}
@@ -86,11 +93,14 @@ export default function OnboardingPage() {
                     <p className="font-semibold text-white">{meta.label}</p>
                     <p className="text-sm text-gray-400">{meta.description}</p>
                   </div>
+                  {/* Checkbox (multi-select) */}
                   <span
-                    className={`w-5 h-5 rounded-full border-2 shrink-0 ${
-                      active ? "border-brand-500 bg-brand-500" : "border-gray-600"
+                    className={`w-5 h-5 rounded-md border-2 shrink-0 flex items-center justify-center text-xs ${
+                      active ? "border-brand-500 bg-brand-500 text-white" : "border-gray-600"
                     }`}
-                  />
+                  >
+                    {active ? "✓" : ""}
+                  </span>
                 </button>
               );
             })}
