@@ -47,3 +47,33 @@ export async function hasSupabaseSession(): Promise<boolean> {
   const { data } = await createClient().auth.getSession();
   return !!data.session;
 }
+
+// Shared in-flight sign-in so concurrent callers (multiple authFetch + the
+// bootstrap) trigger at most one SIWF flow.
+let inflightSignIn: Promise<void> | null = null;
+
+/**
+ * Return a valid access token, establishing a Supabase session via SIWF if one
+ * isn't present (webview storage can be cleared between opens). Self-healing:
+ * an authenticated API call will mint the session on demand. Null if SIWF
+ * doesn't complete (e.g. the user dismisses the prompt).
+ */
+export async function ensureAccessToken(): Promise<string | null> {
+  const supabase = createClient();
+
+  const existing = await supabase.auth.getSession();
+  if (existing.data.session) return existing.data.session.access_token;
+
+  if (!inflightSignIn) {
+    inflightSignIn = performSignIn()
+      .then(() => undefined)
+      .catch(() => undefined)
+      .finally(() => {
+        inflightSignIn = null;
+      });
+  }
+  await inflightSignIn;
+
+  const after = await supabase.auth.getSession();
+  return after.data.session?.access_token ?? null;
+}

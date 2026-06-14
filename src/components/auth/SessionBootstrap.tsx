@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useFrame } from "@/components/layout/FrameProvider";
 import { useAuthStore } from "@/store/auth";
-import { performSignIn, hasSupabaseSession } from "@/lib/auth/signInFlow";
+import { ensureAccessToken } from "@/lib/auth/signInFlow";
 
 /**
  * Ensures a Supabase Auth session exists for already-authenticated users.
@@ -25,10 +25,10 @@ export function SessionBootstrap() {
 
     (async () => {
       try {
-        if (await hasSupabaseSession()) return; // already has a session
-        await performSignIn(); // silent re-auth to mint the session
+        // Establishes a Supabase session if one isn't present (no-op if it is)
+        await ensureAccessToken();
       } catch {
-        /* non-blocking — app still works via the service-key API */
+        /* non-blocking */
       }
     })();
   }, [isReady, context, isAuthenticated]);
