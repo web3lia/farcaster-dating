@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { verifySiwf, parseNonce } from "@/lib/farcaster/verify";
 
-// FID is in the Resources section of the SIWE message as "farcaster://fid/12345"
-function parseFidFromMessage(message: string): number | null {
-  const match = message.match(/farcaster:\/\/fid\/(\d+)/);
-  if (match) return parseInt(match[1]);
-  return null;
-}
+const NONCE_TTL_MS = 10 * 60 * 1000;
 
 async function fetchNeynarProfile(fid: number) {
   if (!process.env.NEYNAR_API_KEY) return null;
@@ -24,24 +20,39 @@ async function fetchNeynarProfile(fid: number) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { message, fid: fidFromClient } = body;
+  const { message, signature } = body;
 
-  if (!message && !fidFromClient) {
-    return NextResponse.json({ error: "message or fid required" }, { status: 400 });
+  // SIWF proof is required — the client-supplied fid is no longer trusted.
+  if (!message || !signature) {
+    return NextResponse.json({ error: "message and signature required" }, { status: 401 });
   }
 
-  // Prefer FID passed directly from sdk.context (most reliable),
-  // fall back to parsing from SIWE message Resources
-  let fid: number | null = fidFromClient ?? null;
-  if (!fid && message) {
-    fid = parseFidFromMessage(message);
-  }
-
-  if (!fid) {
-    return NextResponse.json({ error: "Could not extract FID from message" }, { status: 400 });
+  const nonce = parseNonce(message);
+  if (!nonce) {
+    return NextResponse.json({ error: "Missing nonce" }, { status: 401 });
   }
 
   const supabase = createServiceClient();
+
+  // Consume the nonce (single-use, must be one we issued within the TTL).
+  // The atomic delete-returning prevents replay: a second attempt finds nothing.
+  const { data: consumed } = await supabase
+    .from("auth_nonces")
+    .delete()
+    .eq("nonce", nonce)
+    .gt("created_at", new Date(Date.now() - NONCE_TTL_MS).toISOString())
+    .select();
+
+  if (!consumed || consumed.length === 0) {
+    return NextResponse.json({ error: "Invalid or expired nonce" }, { status: 401 });
+  }
+
+  // Cryptographically verify the signature → trusted fid.
+  const result = await verifySiwf({ message, signature, nonce });
+  if (!result.success || !result.fid) {
+    return NextResponse.json({ error: "Signature verification failed" }, { status: 401 });
+  }
+  const fid = result.fid;
 
   // Build profile: try Neynar first, fall back to minimal data
   const u = await fetchNeynarProfile(fid);
