@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
+import { authFetch } from "@/lib/auth/authFetch";
 import type { Message } from "@/types";
 import { ArrowLeft, SendHorizontal as PaperAirplaneIcon } from "lucide-react";
 const ArrowLeftIcon = ArrowLeft;
@@ -47,7 +48,7 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
   }, [messages]);
 
   async function loadMessages() {
-    const res = await fetch(`/api/messages?match_id=${matchId}`);
+    const res = await authFetch(`/api/messages?match_id=${matchId}`);
     const data = await res.json();
     setMessages(data.messages ?? []);
   }
@@ -68,10 +69,10 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
     const content = input.trim();
     setInput("");
     try {
-      const res = await fetch("/api/messages", {
+      const res = await authFetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ match_id: matchId, sender_fid: fid, content }),
+        body: JSON.stringify({ match_id: matchId, content }),
       });
       const data = await res.json();
       // Append immediately from the API response — don't wait on realtime.

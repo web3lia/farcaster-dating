@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/authed";
 
 export async function GET(req: NextRequest) {
   const matchId = req.nextUrl.searchParams.get("match_id");
   if (!matchId) return NextResponse.json({ error: "match_id required" }, { status: 400 });
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
+  const authed = await getAuthedClient(req);
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // RLS scopes this to messages in matches the caller participates in — a
+  // non-participant simply gets an empty list.
+  const { data, error } = await authed.supabase
     .from("messages")
     .select("*, sender:profiles!messages_sender_fid_fkey(*)")
     .eq("match_id", matchId)
@@ -18,19 +22,23 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { match_id, sender_fid, content, type = "text" } = await req.json();
-  if (!match_id || !sender_fid || !content) {
+  const authed = await getAuthedClient(req);
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { match_id, content, type = "text" } = await req.json();
+  if (!match_id || !content) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
+  // sender_fid is the verified fid from the token — not from the request body.
+  // RLS additionally enforces sender_fid = auth_fid() AND match participation.
+  const { data, error } = await authed.supabase
     .from("messages")
-    .insert({ match_id, sender_fid, content, type })
+    .insert({ match_id, sender_fid: authed.fid, content, type })
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 
   return NextResponse.json({ message: data });
 }
