@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
 import { authFetch } from "@/lib/auth/authFetch";
+import { ensureAccessToken } from "@/lib/auth/signInFlow";
 import type { Message } from "@/types";
 import { ArrowLeft, SendHorizontal as PaperAirplaneIcon } from "lucide-react";
 const ArrowLeftIcon = ArrowLeft;
@@ -24,22 +25,34 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
     if (!fid) { router.replace("/"); return; }
     loadMessages();
     loadMatch();
+
     const supabase = createClient();
-    const channel = supabase
-      .channel(`messages:${matchId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` },
-        (payload) => {
-          const incoming = payload.new as Message;
-          // Dedupe by id — our own message is already appended from the POST response
-          setMessages((prev) =>
-            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
-          );
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      // Authenticate the realtime connection with our stored JWT so RLS lets a
+      // participant receive this match's messages.
+      const token = await ensureAccessToken();
+      if (token) supabase.realtime.setAuth(token);
+      channel = supabase
+        .channel(`messages:${matchId}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` },
+          (payload) => {
+            const incoming = payload.new as Message;
+            // Dedupe by id — our own message is already appended from the POST response
+            setMessages((prev) =>
+              prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+            );
+          }
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fid, matchId]);
 

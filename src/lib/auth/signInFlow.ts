@@ -1,13 +1,13 @@
 import sdk from "@farcaster/frame-sdk";
-import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth";
 
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const PUBLISHABLE = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+
 /**
- * Full SIWF sign-in: nonce → sdk.signIn → server verify → set store + Supabase
- * session. Shared by the sign-in screen and the session bootstrap (returning
- * users who have a persisted store but no Supabase session yet).
- *
- * Returns the verified fid. Throws on failure (caller decides how to surface).
+ * Full SIWF sign-in: nonce → sdk.signIn → server verify → store profile + JWTs.
+ * We keep the Supabase JWTs in our own persisted Zustand store (GoTrue's session
+ * storage is unreliable in the Warpcast webview). Throws on failure.
  */
 export async function performSignIn(): Promise<{ fid: number }> {
   const nonceRes = await fetch("/api/auth/nonce");
@@ -22,62 +22,58 @@ export async function performSignIn(): Promise<{ fid: number }> {
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error ?? "Sign-in failed");
+    throw new Error(data.error ?? `signin ${res.status}`);
   }
 
   const { profile, session } = await res.json();
-  useAuthStore.getState().setAuth(profile.fid, profile);
-
   if (!session?.access_token || !session?.refresh_token) {
     throw new Error("no session in signin response");
   }
 
-  // TEMP: let setSession errors propagate so we can see them
-  const { error } = await createClient().auth.setSession({
-    access_token: session.access_token,
-    refresh_token: session.refresh_token,
-  });
-  if (error) throw new Error("setSession: " + error.message);
-
+  useAuthStore.getState().setAuth(profile.fid, profile);
+  useAuthStore.getState().setTokens(session.access_token, session.refresh_token);
   return { fid: profile.fid };
 }
 
-/** True if the browser currently has an active Supabase Auth session. */
-export async function hasSupabaseSession(): Promise<boolean> {
-  const { data } = await createClient().auth.getSession();
-  return !!data.session;
-}
-
-// Shared in-flight sign-in so concurrent callers (multiple authFetch + the
-// bootstrap) trigger at most one SIWF flow.
+// Coalesce concurrent sign-ins into one SIWF flow.
 let inflightSignIn: Promise<void> | null = null;
 
+/** Refresh the access token using the stored refresh token (no user prompt). */
+export async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = useAuthStore.getState().refreshToken;
+  if (!refreshToken) return null;
+  try {
+    const res = await fetch(`${URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { apikey: PUBLISHABLE, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.access_token) return null;
+    useAuthStore.getState().setTokens(data.access_token, data.refresh_token ?? refreshToken);
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Return a valid access token, establishing a Supabase session via SIWF if one
- * isn't present (webview storage can be cleared between opens). Self-healing:
- * an authenticated API call will mint the session on demand. Null if SIWF
- * doesn't complete (e.g. the user dismisses the prompt).
+ * Return a usable access token, establishing a session via SIWF if we don't
+ * have one yet. Null only if SIWF doesn't complete.
  */
 export async function ensureAccessToken(): Promise<string | null> {
-  const supabase = createClient();
-
-  const existing = await supabase.auth.getSession();
-  if (existing.data.session) return existing.data.session.access_token;
+  const current = useAuthStore.getState().accessToken;
+  if (current) return current;
 
   if (!inflightSignIn) {
     inflightSignIn = performSignIn()
       .then(() => undefined)
-      .catch((e) => {
-        // TEMP diagnostic: surface why establishing the session failed
-        const msg = e instanceof Error ? e.message : String(e);
-        import("react-hot-toast").then((m) => m.default.error("Auth: " + msg));
-      })
+      .catch(() => undefined)
       .finally(() => {
         inflightSignIn = null;
       });
   }
   await inflightSignIn;
-
-  const after = await supabase.auth.getSession();
-  return after.data.session?.access_token ?? null;
+  return useAuthStore.getState().accessToken;
 }
