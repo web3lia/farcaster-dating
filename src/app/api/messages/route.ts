@@ -6,19 +6,17 @@ export async function GET(req: NextRequest) {
   if (!matchId) return NextResponse.json({ error: "match_id required" }, { status: 400 });
 
   const authed = await getAuthedClient(req);
-  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!authed) return NextResponse.json({ error: "Unauthorized", debug: "getAuthedClient returned null" }, { status: 401 });
 
-  // RLS scopes this to messages in matches the caller participates in — a
-  // non-participant simply gets an empty list.
   const { data, error } = await authed.supabase
     .from("messages")
     .select("*, sender:profiles!messages_sender_fid_fkey(*)")
     .eq("match_id", matchId)
     .order("created_at", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: error.message, debug_fid: authed.fid }, { status: 500 });
 
-  return NextResponse.json({ messages: data ?? [] });
+  return NextResponse.json({ messages: data ?? [], debug_fid: authed.fid, debug_count: data?.length ?? 0 });
 }
 
 export async function POST(req: NextRequest) {
