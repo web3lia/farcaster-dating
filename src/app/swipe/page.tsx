@@ -10,6 +10,7 @@ import { SwipeActions } from "@/components/swipe/SwipeActions";
 import { MatchModal } from "@/components/swipe/MatchModal";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { authFetch } from "@/lib/auth/authFetch";
+import { takeLastSignInError } from "@/lib/auth/signInFlow";
 import type { SwipeDirection, Profile } from "@/types";
 import toast from "react-hot-toast";
 
@@ -82,9 +83,11 @@ export default function SwipePage() {
         if (!res.ok) throw new Error(`${res.status} ${data.error ?? ""}`.trim());
         if (data.match) setCurrentMatch(data.match);
       } catch (e) {
-        // TEMP diagnostic: surface the real status/error so we can see whether
-        // it's 401 (no token) vs 403 (RLS) vs 500.
-        toast.error(`Swipe failed: ${e instanceof Error ? e.message : "unknown"}`);
+        const signInErr = takeLastSignInError();
+        const msg = signInErr
+          ? `Sign-in error: ${signInErr}`
+          : `Swipe failed: ${e instanceof Error ? e.message : "unknown"}`;
+        toast.error(msg);
       } finally {
         setSwiping(false);
       }

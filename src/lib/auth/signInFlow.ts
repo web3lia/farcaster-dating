@@ -69,11 +69,23 @@ export async function ensureAccessToken(): Promise<string | null> {
   if (!inflightSignIn) {
     inflightSignIn = performSignIn()
       .then(() => undefined)
-      .catch(() => undefined)
+      .catch((err) => {
+        // Surface sign-in errors so they're visible in the swipe page toast
+        console.error("[ensureAccessToken] performSignIn failed:", err?.message ?? err);
+        lastSignInError = err?.message ?? "sign-in failed";
+      })
       .finally(() => {
         inflightSignIn = null;
       });
   }
   await inflightSignIn;
   return useAuthStore.getState().accessToken;
+}
+
+// Last sign-in error message, readable by callers for display purposes.
+let lastSignInError: string | null = null;
+export function takeLastSignInError(): string | null {
+  const e = lastSignInError;
+  lastSignInError = null;
+  return e;
 }
