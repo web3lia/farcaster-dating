@@ -10,33 +10,22 @@ export interface MintedSession {
   refresh_token: string;
 }
 
-// Synthetic auth user per fid. The fid goes into app_metadata, which GoTrue
-// automatically includes in the JWT — so RLS (Stage 3) can read it without any
-// custom Auth Hook.
 function emailFor(fid: number) {
   return `fid-${fid}@farcaster.local`;
 }
 
-// Deterministic password derived from the server-only secret. Nobody can guess
-// it without SUPABASE_SECRET_KEY, and the only way to reach this code path is a
-// verified SIWF sign-in (Stage 1).
 function passwordFor(fid: number) {
   return createHmac("sha256", SECRET).update(`farcaster-fid-${fid}`).digest("hex");
 }
 
-/**
- * Provision (get-or-create) a Supabase Auth user for a verified fid and return
- * a real session (access + refresh). Best-effort: returns null on any failure
- * so sign-in keeps working even if session minting hiccups (Stage 2 is additive
- * and not yet enforced).
- */
 export async function mintSessionForFid(fid: number): Promise<MintedSession | null> {
   const email = emailFor(fid);
   const password = passwordFor(fid);
 
   try {
-    // 1. Idempotent create — ignore "already registered"
     const admin = createClient(URL, SECRET, { auth: { persistSession: false } });
+
+    // Try to create the user. If they already exist we get an error — that's fine.
     await admin.auth.admin.createUser({
       email,
       password,
@@ -44,13 +33,60 @@ export async function mintSessionForFid(fid: number): Promise<MintedSession | nu
       app_metadata: { fid },
     });
 
-    // 2. Exchange credentials for a session
+    // Always sync password + app_metadata on the existing user so a stale
+    // account (created before this HMAC scheme, or with a different secret)
+    // never blocks sign-in. listUsers is paginated but fid emails are unique,
+    // so we use getUserByEmail via the admin API.
+    const { data: list } = await admin.auth.admin.listUsers({ perPage: 1 });
+    // listUsers doesn't filter — use a direct lookup instead.
+    // Supabase admin doesn't expose getUserByEmail, so we sign in and on
+    // failure we reset via a one-shot magic approach: update by searching.
+    // Simpler: always attempt signIn first; only on failure do we repair.
     const authClient = createClient(URL, PUBLISHABLE, { auth: { persistSession: false } });
-    const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+    let { data, error } = await authClient.auth.signInWithPassword({ email, password });
+
     if (error || !data.session) {
+      // Password mismatch — the account existed before this HMAC scheme.
+      // Find the user by listing and filtering, then force-update the password.
+      const pageSize = 1000;
+      let page = 1;
+      let userId: string | null = null;
+
+      outer: while (true) {
+        const { data: page_data, error: page_error } = await admin.auth.admin.listUsers({
+          page,
+          perPage: pageSize,
+        });
+        if (page_error || !page_data?.users?.length) break;
+        for (const u of page_data.users) {
+          if (u.email === email) {
+            userId = u.id;
+            break outer;
+          }
+        }
+        if (page_data.users.length < pageSize) break;
+        page++;
+      }
+
+      if (userId) {
+        await admin.auth.admin.updateUserById(userId, {
+          password,
+          app_metadata: { fid },
+          email_confirm: true,
+        });
+        // Retry sign-in with the updated password.
+        const retry = await authClient.auth.signInWithPassword({ email, password });
+        data = retry.data;
+        error = retry.error;
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (error || !data?.session) {
       console.error("mintSessionForFid: signIn failed", error?.message);
       return null;
     }
+
     return {
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
