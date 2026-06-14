@@ -19,14 +19,28 @@ export async function GET(req: NextRequest) {
       : { user_id: data.user?.id, email: data.user?.email, app_metadata: data.user?.app_metadata };
   }
 
-  // Test that mintSessionForFid works for fid=1 (canary)
+  // Test full round-trip: mint session → verify token via getUser
   let mintResult: unknown = "skipped";
   const testFid = req.nextUrl.searchParams.get("mint");
   if (testFid) {
     const session = await mintSessionForFid(Number(testFid));
-    mintResult = session
-      ? { ok: true, access_token_prefix: session.access_token.slice(0, 20) }
-      : { ok: false, error: "mintSessionForFid returned null" };
+    if (!session) {
+      mintResult = { ok: false, error: "mintSessionForFid returned null" };
+    } else {
+      const supabase2 = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SECRET_KEY!,
+        { auth: { persistSession: false } }
+      );
+      const { data: u2, error: e2 } = await supabase2.auth.getUser(session.access_token);
+      mintResult = {
+        mint_ok: true,
+        access_token_prefix: session.access_token.slice(0, 20),
+        getUser_after_mint: e2
+          ? { error: e2.message, status: e2.status }
+          : { user_id: u2.user?.id, app_metadata: u2.user?.app_metadata },
+      };
+    }
   }
 
   return NextResponse.json({
