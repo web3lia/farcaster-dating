@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { INTENTS, INTENT_MAP, DEFAULT_INTENT, PROMPT_LABEL, PROMPT_SHORT, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
+import type { Intent } from "@/types";
 import toast from "react-hot-toast";
 
 const INTERESTS = ["🎨 Art", "🎵 Music", "🏋️ Fitness", "📚 Books", "🎮 Gaming", "🌍 Travel", "🍕 Food", "💻 Tech", "🌿 Nature", "🎬 Film"];
@@ -19,6 +21,9 @@ export default function ProfilePage() {
     location: profile?.location ?? "",
     interests: profile?.interests ?? [] as string[],
     looking_for: profile?.looking_for ?? "",
+    intent: (profile?.intent ?? DEFAULT_INTENT) as Intent,
+    about: profile?.about ?? "",
+    prompt_answer: profile?.prompt_answer ?? "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -49,6 +54,9 @@ export default function ProfilePage() {
           location: form.location,
           interests: form.interests,
           looking_for: form.looking_for,
+          intent: form.intent,
+          about: form.about.trim().slice(0, ABOUT_MAX),
+          prompt_answer: form.prompt_answer.trim().slice(0, PROMPT_MAX),
         }),
       });
       const data = await res.json();
@@ -97,6 +105,67 @@ export default function ProfilePage() {
 
         {editing ? (
           <div className="space-y-4">
+            {/* Intent / goal */}
+            <div>
+              <label className="text-xs text-gray-400 mb-2 block">I'm here for</label>
+              <div className="space-y-2">
+                {INTENTS.map((meta) => {
+                  const active = form.intent === meta.id;
+                  return (
+                    <button
+                      key={meta.id}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, intent: meta.id }))}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-colors ${
+                        active ? meta.selectedClass : "border-gray-800 bg-gray-900/50"
+                      }`}
+                    >
+                      <span className="text-2xl">{meta.emoji}</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-white">{meta.label}</p>
+                        <p className="text-xs text-gray-400">{meta.description}</p>
+                      </div>
+                      <span
+                        className={`w-4 h-4 rounded-full border-2 shrink-0 ${
+                          active ? "border-brand-500 bg-brand-500" : "border-gray-600"
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* About */}
+            <div>
+              <label className="flex justify-between text-xs text-gray-400 mb-1">
+                <span>About you</span>
+                <span>{form.about.length}/{ABOUT_MAX}</span>
+              </label>
+              <textarea
+                value={form.about}
+                onChange={(e) => setForm((f) => ({ ...f, about: e.target.value.slice(0, ABOUT_MAX) }))}
+                rows={3}
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                placeholder="What you do, what you're into…"
+              />
+            </div>
+
+            {/* Prompt */}
+            <div>
+              <label className="flex justify-between text-xs text-gray-400 mb-1">
+                <span>{PROMPT_LABEL}</span>
+                <span>{form.prompt_answer.length}/{PROMPT_MAX}</span>
+              </label>
+              <textarea
+                value={form.prompt_answer}
+                onChange={(e) => setForm((f) => ({ ...f, prompt_answer: e.target.value.slice(0, PROMPT_MAX) }))}
+                rows={2}
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                placeholder="What you're working on right now…"
+              />
+            </div>
+
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Bio</label>
               <textarea
@@ -157,6 +226,27 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Intent badge */}
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold ${
+                (INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT]).badgeClass
+              }`}
+            >
+              <span className="text-sm leading-none">
+                {(INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT]).emoji}
+              </span>
+              <span>{(INTENT_MAP[profile.intent] ?? INTENT_MAP[DEFAULT_INTENT]).label}</span>
+            </div>
+
+            {profile.about && (
+              <p className="text-gray-200 text-sm leading-relaxed">{profile.about}</p>
+            )}
+            {profile.prompt_answer && (
+              <p className="text-sm text-gray-300">
+                <span className="font-semibold text-white">🛠 {PROMPT_SHORT}:</span>{" "}
+                {profile.prompt_answer}
+              </p>
+            )}
             {profile.bio && (
               <p className="text-gray-300 text-sm leading-relaxed">{profile.bio}</p>
             )}
