@@ -9,6 +9,7 @@ import { SwipeCard } from "@/components/swipe/SwipeCard";
 import { SwipeActions } from "@/components/swipe/SwipeActions";
 import { MatchModal } from "@/components/swipe/MatchModal";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { authFetch } from "@/lib/auth/authFetch";
 import type { SwipeDirection, Profile } from "@/types";
 import toast from "react-hot-toast";
 
@@ -69,11 +70,10 @@ export default function SwipePage() {
       removeTop();
 
       try {
-        const res = await fetch("/api/swipes", {
+        const res = await authFetch("/api/swipes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            swiper_fid: fid,
             swiped_fid: profileFid,
             direction: apiDir,
           }),

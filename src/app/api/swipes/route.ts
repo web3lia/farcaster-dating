@@ -1,34 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/authed";
 
 export async function POST(req: NextRequest) {
-  const { swiper_fid, swiped_fid, direction } = await req.json();
+  const authed = await getAuthedClient(req);
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!swiper_fid || !swiped_fid || !direction) {
+  const { swiped_fid, direction } = await req.json();
+  if (!swiped_fid || !direction) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const supabase = createServiceClient();
+  // swiper_fid is the verified fid from the token; RLS enforces it too.
+  const swiper_fid = authed.fid;
 
-  // Insert swipe
-  const { error: swipeError } = await supabase
+  const { error: swipeError } = await authed.supabase
     .from("swipes")
     .upsert({ swiper_fid, swiped_fid, direction }, { onConflict: "swiper_fid,swiped_fid" });
 
   if (swipeError) {
-    return NextResponse.json({ error: swipeError.message }, { status: 500 });
+    return NextResponse.json({ error: swipeError.message }, { status: 403 });
   }
 
-  // Check for match if liked
+  // Check for a mutual match (the RPC is SECURITY DEFINER, so it can read both
+  // sides' swipes and insert the match regardless of the caller's RLS).
   let match = null;
   if (direction === "like" || direction === "superlike") {
-    const { data } = await supabase.rpc("check_and_create_match", {
+    const { data } = await authed.supabase.rpc("check_and_create_match", {
       p_swiper_fid: swiper_fid,
       p_swiped_fid: swiped_fid,
     });
 
     if (data) {
-      const { data: matchData } = await supabase
+      // The caller is a participant, so matches_select lets them read it.
+      const { data: matchData } = await authed.supabase
         .from("matches")
         .select("*, user1:profiles!matches_user1_fid_fkey(*), user2:profiles!matches_user2_fid_fkey(*)")
         .eq("id", data)
