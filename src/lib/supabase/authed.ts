@@ -10,6 +10,8 @@ export async function getAuthedClient(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
 
+  const token = authHeader.slice(7); // strip "Bearer "
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -19,7 +21,10 @@ export async function getAuthedClient(req: Request) {
     }
   );
 
-  const { data, error } = await supabase.auth.getUser();
+  // Pass the token explicitly so GoTrue verifies it via /auth/v1/user;
+  // without it, getUser() looks for a stored session (which is always empty
+  // on a fresh persistSession:false client) and returns an error.
+  const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) return null;
 
   const fid = (data.user.app_metadata as { fid?: number })?.fid ?? null;
