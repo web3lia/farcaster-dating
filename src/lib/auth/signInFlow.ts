@@ -1,13 +1,13 @@
 import sdk from "@farcaster/frame-sdk";
 import { useAuthStore } from "@/store/auth";
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const PUBLISHABLE = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 /**
  * Full SIWF sign-in: nonce → sdk.signIn → server verify → store profile + JWTs.
- * We keep the Supabase JWTs in our own persisted Zustand store (GoTrue's session
- * storage is unreliable in the Warpcast webview). Throws on failure.
+ * Supabase JWTs are stored in our persisted Zustand store rather than GoTrue's
+ * session storage, which is unreliable in the Warpcast webview.
  */
 export async function performSignIn(): Promise<{ fid: number }> {
   const nonceRes = await fetch("/api/auth/nonce");
@@ -20,6 +20,7 @@ export async function performSignIn(): Promise<{ fid: number }> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, signature }),
   });
+
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error ?? `signin ${res.status}`);
@@ -35,15 +36,15 @@ export async function performSignIn(): Promise<{ fid: number }> {
   return { fid: profile.fid };
 }
 
-// Coalesce concurrent sign-ins into one SIWF flow.
+// Coalesces concurrent sign-in attempts into a single SIWF flow.
 let inflightSignIn: Promise<void> | null = null;
 
-/** Refresh the access token using the stored refresh token (no user prompt). */
+/** Silently refreshes the access token using the stored refresh token. */
 export async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = useAuthStore.getState().refreshToken;
   if (!refreshToken) return null;
   try {
-    const res = await fetch(`${URL}/auth/v1/token?grant_type=refresh_token`, {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
       method: "POST",
       headers: { apikey: PUBLISHABLE, "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -59,8 +60,8 @@ export async function refreshAccessToken(): Promise<string | null> {
 }
 
 /**
- * Return a usable access token, establishing a session via SIWF if we don't
- * have one yet. Null only if SIWF doesn't complete.
+ * Returns a usable access token. Triggers a SIWF sign-in if none is stored.
+ * Returns null only if sign-in fails or is dismissed.
  */
 export async function ensureAccessToken(): Promise<string | null> {
   const current = useAuthStore.getState().accessToken;
@@ -69,23 +70,11 @@ export async function ensureAccessToken(): Promise<string | null> {
   if (!inflightSignIn) {
     inflightSignIn = performSignIn()
       .then(() => undefined)
-      .catch((err) => {
-        // Surface sign-in errors so they're visible in the swipe page toast
-        console.error("[ensureAccessToken] performSignIn failed:", err?.message ?? err);
-        lastSignInError = err?.message ?? "sign-in failed";
-      })
+      .catch(() => undefined)
       .finally(() => {
         inflightSignIn = null;
       });
   }
   await inflightSignIn;
   return useAuthStore.getState().accessToken;
-}
-
-// Last sign-in error message, readable by callers for display purposes.
-let lastSignInError: string | null = null;
-export function takeLastSignInError(): string | null {
-  const e = lastSignInError;
-  lastSignInError = null;
-  return e;
 }

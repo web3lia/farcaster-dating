@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
 import { authFetch } from "@/lib/auth/authFetch";
 import { ensureAccessToken } from "@/lib/auth/signInFlow";
+
 import type { Message } from "@/types";
 import { ArrowLeft, SendHorizontal as PaperAirplaneIcon } from "lucide-react";
 const ArrowLeftIcon = ArrowLeft;
@@ -67,7 +68,7 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
   }
 
   async function loadMatch() {
-    const res = await fetch(`/api/matches?fid=${fid}`);
+    const res = await authFetch(`/api/matches`);
     const data = await res.json();
     const m = (data.matches ?? []).find((x: { id: string }) => x.id === matchId);
     if (m) {

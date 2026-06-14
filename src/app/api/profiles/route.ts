@@ -1,27 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/authed";
 
 export async function GET(req: NextRequest) {
-  const fid = req.nextUrl.searchParams.get("fid");
-  if (!fid) return NextResponse.json({ error: "fid required" }, { status: 400 });
+  const authed = await getAuthedClient(req);
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const supabase = createServiceClient();
-  const currentFid = parseInt(fid);
-
-  // Get already-swiped fids
-  const { data: swiped } = await supabase
+  const { data: swiped } = await authed.supabase
     .from("swipes")
     .select("swiped_fid")
-    .eq("swiper_fid", currentFid);
+    .eq("swiper_fid", authed.fid);
 
   const swipedFids = (swiped ?? []).map((s: { swiped_fid: number }) => s.swiped_fid);
-  swipedFids.push(currentFid); // exclude self
+  swipedFids.push(authed.fid); // exclude self
 
-  const { data: profiles, error } = await supabase
+  const { data: profiles, error } = await authed.supabase
     .from("profiles")
     .select("*")
     .eq("show_in_discovery", true)
-    .not("fid", "in", `(${swipedFids.join(",")})` as string)
+    .not("fid", "in", `(${swipedFids.join(",")})`)
     .order("follower_count", { ascending: false })
     .limit(20);
 

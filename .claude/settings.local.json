@@ -33,7 +33,19 @@
       "Bash(sed -n '46,60p' src/components/swipe/MatchModal.tsx)",
       "Bash(cd /Users/nataladagaeva/Desktop/farcaster-dating *)",
       "Bash(sed -n '1,20p' src/app/api/swipes/route.ts)",
-      "Bash(sed -n '1,15p' src/app/api/matches/route.ts)"
+      "Bash(sed -n '1,15p' src/app/api/matches/route.ts)",
+      "Bash(git commit -m 'Fix getAuthedClient: pass JWT to getUser\\(\\) explicitly *)",
+      "Bash(git commit -m 'authed: use service role key for Supabase client init *)",
+      "Bash(git push *)",
+      "Bash(vercel env *)",
+      "Bash(vercel link *)",
+      "Bash(git commit -m 'debug: expose sign-in errors in toast + add debug2 endpoint *)",
+      "Bash(vercel --version)",
+      "Bash(vercel ls *)",
+      "Bash(curl -s \"https://farcaster-dating.vercel.app/api/auth/debug2?mint=1\")",
+      "Bash(git commit *)",
+      "Bash(curl -sf \"https://farcaster-dating.vercel.app/api/auth/debug2?mint=1\")",
+      "Bash(npm run *)"
     ]
   }
 }

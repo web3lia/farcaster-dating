@@ -10,7 +10,6 @@ import { SwipeActions } from "@/components/swipe/SwipeActions";
 import { MatchModal } from "@/components/swipe/MatchModal";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { authFetch } from "@/lib/auth/authFetch";
-import { takeLastSignInError } from "@/lib/auth/signInFlow";
 import type { SwipeDirection, Profile } from "@/types";
 import toast from "react-hot-toast";
 
@@ -37,7 +36,7 @@ export default function SwipePage() {
     if (!fid || loading) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/profiles?fid=${fid}`);
+      const res = await authFetch(`/api/profiles`);
       const data = await res.json();
       const incoming: Profile[] = data.profiles ?? [];
       // Merge into the current stack: keep what's there, append only new
@@ -83,11 +82,7 @@ export default function SwipePage() {
         if (!res.ok) throw new Error(`${res.status} ${data.error ?? ""}`.trim());
         if (data.match) setCurrentMatch(data.match);
       } catch (e) {
-        const signInErr = takeLastSignInError();
-        const msg = signInErr
-          ? `Sign-in error: ${signInErr}`
-          : `Swipe failed: ${e instanceof Error ? e.message : "unknown"}`;
-        toast.error(msg);
+        toast.error(`Swipe failed: ${e instanceof Error ? e.message : "unknown"}`);
       } finally {
         setSwiping(false);
       }

@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { getAuthedClient } from "@/lib/supabase/authed";
 
 export async function GET(req: NextRequest) {
-  const fid = req.nextUrl.searchParams.get("fid");
-  if (!fid) return NextResponse.json({ error: "fid required" }, { status: 400 });
+  const authed = await getAuthedClient(req);
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const supabase = createServiceClient();
-  const currentFid = parseInt(fid);
-
-  const { data, error } = await supabase
+  const { data, error } = await authed.supabase
     .from("matches")
     .select(`
       *,
       user1:profiles!matches_user1_fid_fkey(*),
       user2:profiles!matches_user2_fid_fkey(*)
     `)
-    .or(`user1_fid.eq.${currentFid},user2_fid.eq.${currentFid}`)
+    .or(`user1_fid.eq.${authed.fid},user2_fid.eq.${authed.fid}`)
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
