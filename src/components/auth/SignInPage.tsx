@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import sdk from "@farcaster/frame-sdk";
 import { useFrame } from "@/components/layout/FrameProvider";
 import { useAuthStore } from "@/store/auth";
+import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
 export function SignInPage() {
@@ -57,8 +58,22 @@ export function SignInPage() {
         throw new Error(data.error ?? "Sign-in failed");
       }
 
-      const { profile } = await res.json();
+      const { profile, session } = await res.json();
       setAuth(profile.fid, profile);
+
+      // Stage 2: establish the Supabase Auth session (shadow — carries fid in
+      // the JWT for upcoming RLS). Best-effort; failure doesn't block sign-in.
+      if (session?.access_token && session?.refresh_token) {
+        try {
+          await createClient().auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          });
+        } catch {
+          /* non-blocking */
+        }
+      }
+
       router.replace(destAfterAuth);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";

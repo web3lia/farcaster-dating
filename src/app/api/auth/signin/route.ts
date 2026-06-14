@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { verifySiwf, parseNonce } from "@/lib/farcaster/verify";
+import { mintSessionForFid } from "@/lib/supabase/session";
 
 const NONCE_TTL_MS = 10 * 60 * 1000;
 
@@ -77,5 +78,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ profile });
+  // Stage 2: mint a Supabase Auth session carrying fid in the JWT. Best-effort
+  // and not yet enforced — if it's null the app still works via the service-key
+  // API routes exactly as before.
+  const session = await mintSessionForFid(fid);
+
+  return NextResponse.json({ profile, session });
 }
