@@ -12,7 +12,7 @@ const ArrowLeftIcon = ArrowLeft;
 export default function ChatPage({ params }: { params: { matchId: string } }) {
   const { matchId } = params;
   const router = useRouter();
-  const { fid, profile } = useAuthStore();
+  const { fid } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);

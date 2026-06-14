@@ -24,12 +24,7 @@ async function fetchNeynarProfile(fid: number) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { message, signature, fid: fidFromClient } = body;
-
-  // Debug log — visible in Vercel Functions logs
-  console.log("[signin] body keys:", Object.keys(body));
-  console.log("[signin] fid from client:", fidFromClient);
-  console.log("[signin] message preview:", message?.slice(0, 400) ?? "(none)");
+  const { message, fid: fidFromClient } = body;
 
   if (!message && !fidFromClient) {
     return NextResponse.json({ error: "message or fid required" }, { status: 400 });
@@ -43,8 +38,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (!fid) {
-    // Log message for debugging
-    console.error("Could not extract FID. Message preview:", message?.slice(0, 300));
     return NextResponse.json({ error: "Could not extract FID from message" }, { status: 400 });
   }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/auth";
 import { useSwipeStore } from "@/store/swipe";
 import { SwipeCard } from "@/components/swipe/SwipeCard";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Profile, SwipeDirection } from "@/types";
