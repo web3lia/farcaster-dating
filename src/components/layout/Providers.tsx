@@ -2,10 +2,12 @@
 
 import { Toaster } from "react-hot-toast";
 import { FrameProvider } from "./FrameProvider";
+import { SessionBootstrap } from "@/components/auth/SessionBootstrap";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <FrameProvider>
+      <SessionBootstrap />
       {children}
       <Toaster
         position="top-center"

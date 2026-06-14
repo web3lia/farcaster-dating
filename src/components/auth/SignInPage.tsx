@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import sdk from "@farcaster/frame-sdk";
 import { useFrame } from "@/components/layout/FrameProvider";
 import { useAuthStore } from "@/store/auth";
-import { createClient } from "@/lib/supabase/client";
+import { performSignIn } from "@/lib/auth/signInFlow";
 import toast from "react-hot-toast";
 
 export function SignInPage() {
   const router = useRouter();
-  const { isAuthenticated, onboarded, setAuth } = useAuthStore();
+  const { isAuthenticated, onboarded } = useAuthStore();
   const { isReady, context } = useFrame();
   const [loading, setLoading] = useState(false);
 
@@ -38,42 +37,7 @@ export function SignInPage() {
     }
     setLoading(true);
     try {
-      // 1. Get nonce
-      const nonceRes = await fetch("/api/auth/nonce");
-      const { nonce } = await nonceRes.json();
-
-      // 2. signIn — only works after sdk.actions.ready() has been called
-      const { message, signature } = await sdk.actions.signIn({ nonce });
-
-      // 3. Verify on server + upsert profile
-      // Pass fid from context directly — most reliable, no message parsing needed
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, signature, fid: context?.user?.fid }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Sign-in failed");
-      }
-
-      const { profile, session } = await res.json();
-      setAuth(profile.fid, profile);
-
-      // Stage 2: establish the Supabase Auth session (shadow — carries fid in
-      // the JWT for upcoming RLS). Best-effort; failure doesn't block sign-in.
-      if (session?.access_token && session?.refresh_token) {
-        try {
-          await createClient().auth.setSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-          });
-        } catch {
-          /* non-blocking */
-        }
-      }
-
+      await performSignIn();
       router.replace(destAfterAuth);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
