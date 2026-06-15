@@ -11,7 +11,7 @@ export async function PATCH(
 
   const allowed = [
     "bio", "age", "location", "interests", "looking_for", "show_in_discovery",
-    "intents", "about", "prompt_answer",
+    "intents", "about", "prompt_answer", "trading_style", "risk_profile",
   ];
   const update: Record<string, unknown> = {};
   for (const key of allowed) {

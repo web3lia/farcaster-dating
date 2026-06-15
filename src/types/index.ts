@@ -12,6 +12,12 @@ export interface FarcasterUser {
 
 export type Intent = "romance" | "friendship" | "networking";
 
+export type TradingStyle =
+  | "meme_trader" | "nft_collector" | "degen" | "arbitrage"
+  | "whale_watcher" | "diamond_hands" | "defi_farmer" | "builder";
+
+export type RiskProfile = "hodl_chill" | "calculated" | "ape_in" | "full_degen" | "gigachad";
+
 export interface Profile {
   id: string;
   fid: number;
@@ -28,6 +34,8 @@ export interface Profile {
   location?: string;
   show_in_discovery: boolean;
   intents: Intent[];
+  trading_style: TradingStyle[];
+  risk_profile?: RiskProfile;
   about: string;
   prompt_answer: string;
   created_at: string;

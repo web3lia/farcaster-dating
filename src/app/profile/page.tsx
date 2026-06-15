@@ -6,7 +6,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { INTENTS, DEFAULT_INTENTS, intentsToMetas, PROMPT_LABEL, PROMPT_SHORT, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
-import type { Intent } from "@/types";
+import { TRADING_STYLES, RISK_PROFILES } from "@/lib/crypto";
+import type { Intent, TradingStyle, RiskProfile } from "@/types";
 import toast from "react-hot-toast";
 import { authFetch } from "@/lib/auth/authFetch";
 
@@ -23,6 +24,8 @@ export default function ProfilePage() {
     interests: profile?.interests ?? [] as string[],
     looking_for: profile?.looking_for ?? "",
     intents: (profile?.intents ?? []) as Intent[],
+    trading_style: (profile?.trading_style ?? []) as TradingStyle[],
+    risk_profile: (profile?.risk_profile ?? "") as RiskProfile | "",
     about: profile?.about ?? "",
     prompt_answer: profile?.prompt_answer ?? "",
   });
@@ -39,6 +42,15 @@ export default function ProfilePage() {
       intents: f.intents.includes(id)
         ? f.intents.filter((x) => x !== id)
         : [...f.intents, id],
+    }));
+  }
+
+  function toggleTradingStyle(id: TradingStyle) {
+    setForm((f) => ({
+      ...f,
+      trading_style: f.trading_style.includes(id)
+        ? f.trading_style.filter((x) => x !== id)
+        : [...f.trading_style, id],
     }));
   }
 
@@ -65,6 +77,8 @@ export default function ProfilePage() {
           interests: form.interests,
           looking_for: form.looking_for,
           intents: form.intents.length > 0 ? form.intents : DEFAULT_INTENTS,
+          trading_style: form.trading_style,
+          risk_profile: form.risk_profile || null,
           about: form.about.trim().slice(0, ABOUT_MAX),
           prompt_answer: form.prompt_answer.trim().slice(0, PROMPT_MAX),
         }),
@@ -142,6 +156,56 @@ export default function ProfilePage() {
                       >
                         {active ? "✓" : ""}
                       </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Trading style (multi-select) */}
+            <div>
+              <label className="text-xs text-gray-400 mb-2 block">Trading style (pick all that apply)</label>
+              <div className="grid grid-cols-2 gap-2">
+                {TRADING_STYLES.map((s) => {
+                  const active = form.trading_style.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleTradingStyle(s.id)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-colors ${
+                        active
+                          ? "border-brand-500 bg-brand-500/20 text-white"
+                          : "border-gray-800 bg-gray-900/50 text-gray-400"
+                      }`}
+                    >
+                      <span className="text-lg leading-none">{s.emoji}</span>
+                      <span className="text-xs font-semibold">{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Risk profile (single-select) */}
+            <div>
+              <label className="text-xs text-gray-400 mb-2 block">Risk profile</label>
+              <div className="flex flex-wrap gap-2">
+                {RISK_PROFILES.map((r) => {
+                  const active = form.risk_profile === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, risk_profile: active ? "" : r.id }))}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-full border-2 text-sm font-semibold transition-colors ${
+                        active
+                          ? "border-amber-500 bg-amber-500/20 text-amber-300"
+                          : "border-gray-800 bg-gray-900/50 text-gray-400"
+                      }`}
+                    >
+                      <span>{r.emoji}</span>
+                      <span>{r.label}</span>
                     </button>
                   );
                 })}

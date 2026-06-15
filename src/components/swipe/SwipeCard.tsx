@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import type { Profile, SwipeDirection } from "@/types";
 import { MapPin as MapPinIcon } from "lucide-react";
 import { intentsToMetas, PROMPT_SHORT } from "@/lib/intents";
+import { tradingStyleMeta, riskProfileMeta } from "@/lib/crypto";
 
 const SWIPE_THRESHOLD = 100;
 
@@ -26,6 +27,8 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
 
   const [expanded, setExpanded] = useState(false);
   const intentMetas = intentsToMetas(profile.intents);
+  const tradingMetas = (profile.trading_style ?? []).slice(0, 3).map(tradingStyleMeta).filter(Boolean);
+  const riskMeta = profile.risk_profile ? riskProfileMeta(profile.risk_profile) : null;
 
   function handleDragEnd(_: unknown, info: PanInfo) {
     if (info.offset.x > SWIPE_THRESHOLD) {
@@ -144,6 +147,30 @@ export function SwipeCard({ profile, onSwipe, isTop, zIndex }: Props) {
               {profile.bio && (
                 <p className="text-sm text-gray-200 line-clamp-3">{profile.bio}</p>
               )}
+
+              {/* Trading style badges */}
+              {tradingMetas.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tradingMetas.map((m) => m && (
+                    <span
+                      key={m.id}
+                      className="flex items-center gap-1 text-xs bg-brand-600/70 text-white rounded-full px-2.5 py-1 font-semibold backdrop-blur-sm"
+                    >
+                      <span>{m.emoji}</span>
+                      <span>{m.label}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Risk profile badge */}
+              {riskMeta && (
+                <span className="inline-flex items-center gap-1 text-xs bg-amber-500/70 text-amber-100 rounded-full px-2.5 py-1 font-semibold backdrop-blur-sm">
+                  <span>{riskMeta.emoji}</span>
+                  <span>{riskMeta.label}</span>
+                </span>
+              )}
+
               <div className="flex flex-wrap gap-1">
                 {profile.interests.slice(0, 5).map((tag) => (
                   <span
