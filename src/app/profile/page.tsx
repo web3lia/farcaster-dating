@@ -129,7 +129,30 @@ export default function ProfilePage() {
 
         {editing ? (
           <div className="space-y-4">
-            {/* 3. About / Bio */}
+            {/* 3. Age */}
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Age</label>
+              <input
+                type="number"
+                value={form.age}
+                onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="18"
+              />
+            </div>
+
+            {/* 4. Location */}
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Location</label>
+              <input
+                value={form.location}
+                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="SF, CA"
+              />
+            </div>
+
+            {/* 5. About / Bio */}
             <div>
               <label className="flex justify-between text-xs text-gray-400 mb-1">
                 <span>About you</span>
@@ -170,30 +193,18 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* 4. Age + Looking for */}
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-xs text-gray-400 mb-1 block">Age</label>
-                <input
-                  type="number"
-                  value={form.age}
-                  onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
-                  className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="18"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-gray-400 mb-1 block">Looking for</label>
-                <input
-                  value={form.looking_for}
-                  onChange={(e) => setForm((f) => ({ ...f, looking_for: e.target.value }))}
-                  className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="everyone, women, men…"
-                />
-              </div>
+            {/* Looking for */}
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Looking for</label>
+              <input
+                value={form.looking_for}
+                onChange={(e) => setForm((f) => ({ ...f, looking_for: e.target.value }))}
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="everyone, women, men…"
+              />
             </div>
 
-            {/* 5. Intents */}
+            {/* Intents */}
             <div>
               <label className="text-xs text-gray-400 mb-2 block">I'm here for (pick one or more)</label>
               <div className="space-y-2">
@@ -226,18 +237,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* 6. Location */}
-            <div>
-              <label className="text-xs text-gray-400 mb-1 block">Location</label>
-              <input
-                value={form.location}
-                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="SF, CA"
-              />
-            </div>
-
-            {/* 7. Interests */}
+            {/* Interests */}
             <div>
               <label className="text-xs text-gray-400 mb-2 block">Interests</label>
               <div className="flex flex-wrap gap-2">
