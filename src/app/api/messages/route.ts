@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   if (!matchId) return NextResponse.json({ error: "match_id required" }, { status: 400 });
 
   const authed = await getAuthedClient(req);
-  if (!authed) return NextResponse.json({ error: "Unauthorized", debug: "getAuthedClient returned null" }, { status: 401 });
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data, error } = await authed.supabase
     .from("messages")
@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
     .eq("match_id", matchId)
     .order("created_at", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message, debug_fid: authed.fid }, { status: 500 });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ messages: data ?? [], debug_fid: authed.fid, debug_count: data?.length ?? 0 });
+  return NextResponse.json({ messages: data ?? [] });
 }
 
 export async function POST(req: NextRequest) {
