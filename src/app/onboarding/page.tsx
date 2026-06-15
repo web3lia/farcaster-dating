@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/auth";
 import { INTENTS, DEFAULT_INTENTS, PROMPT_LABEL, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
 import type { Intent } from "@/types";
 import toast from "react-hot-toast";
+import { authFetch } from "@/lib/auth/authFetch";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function OnboardingPage() {
     if (!fid || saving) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/profiles/${fid}`, {
+      const res = await authFetch(`/api/profiles/${fid}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

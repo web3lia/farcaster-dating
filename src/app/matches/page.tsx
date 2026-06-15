@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { authFetch } from "@/lib/auth/authFetch";
 import type { Match } from "@/types";
 
 export default function MatchesPage() {
@@ -19,7 +20,7 @@ export default function MatchesPage() {
 
   useEffect(() => {
     if (!fid) return;
-    fetch(`/api/matches?fid=${fid}`)
+    authFetch(`/api/matches`)
       .then((r) => r.json())
       .then((d) => setMatches(d.matches ?? []))
       .finally(() => setLoading(false));

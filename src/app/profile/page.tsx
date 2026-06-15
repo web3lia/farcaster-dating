@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { INTENTS, DEFAULT_INTENTS, intentsToMetas, PROMPT_LABEL, PROMPT_SHORT, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
 import type { Intent } from "@/types";
 import toast from "react-hot-toast";
+import { authFetch } from "@/lib/auth/authFetch";
 
 const INTERESTS = ["🎨 Art", "🎵 Music", "🏋️ Fitness", "📚 Books", "🎮 Gaming", "🌍 Travel", "🍕 Food", "💻 Tech", "🌿 Nature", "🎬 Film"];
 
@@ -54,7 +55,7 @@ export default function ProfilePage() {
     if (!fid) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/profiles/${fid}`, {
+      const res = await authFetch(`/api/profiles/${fid}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
