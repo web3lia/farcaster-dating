@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
 import { authFetch } from "@/lib/auth/authFetch";
 import { ensureAccessToken } from "@/lib/auth/signInFlow";
+import sdk from "@farcaster/frame-sdk";
 
 import type { Message } from "@/types";
 import { ArrowLeft, SendHorizontal as PaperAirplaneIcon } from "lucide-react";
@@ -19,7 +20,7 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [otherUser, setOtherUser] = useState<{ display_name: string; pfp_url: string } | null>(null);
+  const [otherUser, setOtherUser] = useState<{ display_name: string; pfp_url: string; username: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -114,12 +115,15 @@ export default function ChatPage({ params }: { params: { matchId: string } }) {
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
         {otherUser && (
-          <>
-            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-brand-500">
+          <button
+            className="flex items-center gap-3 min-w-0"
+            onClick={() => sdk.actions.openUrl(`https://warpcast.com/${otherUser.username}`)}
+          >
+            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-brand-500 shrink-0">
               <Avatar src={otherUser.pfp_url} alt="" className="w-full h-full object-cover" />
             </div>
-            <span className="font-semibold text-white">{otherUser.display_name}</span>
-          </>
+            <span className="font-semibold text-white truncate">{otherUser.display_name}</span>
+          </button>
         )}
       </header>
 
