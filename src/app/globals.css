@@ -10,8 +10,13 @@
 
   html, body {
     @apply h-full overflow-hidden;
+    background-color: #0A0E0D;
+    color: #E8F0EC;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
+    /* Prevent double-tap zoom and pinch-zoom at the CSS level.
+       Inner scroll containers override this with touch-action: pan-y where needed. */
+    touch-action: manipulation;
   }
 
   #__next, main {
@@ -23,4 +28,49 @@
   .safe-top    { padding-top: var(--safe-top); }
   .safe-bottom { padding-bottom: var(--safe-bottom); }
   .drag-none   { user-select: none; -webkit-user-select: none; }
+}
+
+/* Superlike block animations */
+@keyframes superlike-entrance {
+  0%   { opacity: 0; transform: scale(0.88); }
+  70%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes superlike-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Entrance on the wrapper — runs once, fill: both */
+.superlike-entrance {
+  animation: superlike-entrance 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Gradient on a separate child layer — isolated from fill-mode, loops forever */
+.superlike-shimmer-bg {
+  background: linear-gradient(
+    120deg,
+    rgba(109, 40, 217, 0.30) 0%,
+    rgba(167, 139, 250, 0.50) 35%,
+    rgba(216, 180, 254, 0.35) 52%,
+    rgba(139, 92, 246, 0.45) 70%,
+    rgba(109, 40, 217, 0.30) 100%
+  );
+  background-size: 280% 280%;
+  animation: superlike-gradient-shift 3.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .superlike-entrance {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .superlike-shimmer-bg {
+    animation: none;
+    background: rgba(109, 40, 217, 0.30);
+    background-size: unset;
+  }
 }
