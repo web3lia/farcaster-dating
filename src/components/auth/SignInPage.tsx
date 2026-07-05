@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFrame } from "@/components/layout/FrameProvider";
 import { useAuthStore } from "@/store/auth";
 import { performSignIn } from "@/lib/auth/signInFlow";
+import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
 
 export function SignInPage() {
@@ -54,63 +55,65 @@ export function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-terminal-bg flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
         {/* Logo */}
         <div className="text-center">
-          <div className="text-7xl mb-4">💜</div>
-          <h1 className="text-3xl font-bold text-white">Farcaster Dating</h1>
-          <p className="text-gray-400 mt-2 text-sm">
+          <img src="/onlyfrens_mascot_green.png" alt="Onlyfrens" className="w-20 h-20 mb-4 mx-auto" />
+          <h1 className="text-3xl font-mono font-bold text-ink">Onlyfrens</h1>
+          <p className="text-ink-muted mt-2 text-sm font-mono">
             Find your match in the Farcaster universe
           </p>
         </div>
 
         {/* Features */}
-        <ul className="w-full space-y-3 text-sm text-gray-300">
+        <div className="w-full bg-surface border border-ui-border rounded-2xl p-5 space-y-3">
           {[
             ["💜", "Swipe profiles from your network"],
             ["✨", "Mutual likes create a match"],
             ["💬", "Chat privately with your matches"],
           ].map(([icon, text]) => (
-            <li key={text} className="flex items-center gap-3">
-              <span className="text-xl">{icon}</span>
-              <span>{text}</span>
-            </li>
+            <div key={text} className="flex items-center gap-3">
+              <span className="text-xl shrink-0">{icon}</span>
+              <span className="text-sm font-mono text-ink">{text}</span>
+            </div>
           ))}
-        </ul>
+        </div>
 
         {/* Sign In */}
         <div className="w-full flex flex-col items-center gap-3">
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
             onClick={handleSignIn}
             disabled={loading || !isReady}
-            className="w-full py-4 px-6 bg-[#7C3AED] hover:bg-[#6D28D9] active:bg-[#5B21B6] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-lg rounded-2xl transition-colors shadow-lg flex items-center justify-center gap-3"
           >
             {!isReady ? (
               <>
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-acid/30 border-t-acid rounded-full animate-spin" />
                 Loading…
               </>
             ) : loading ? (
               <>
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-acid/30 border-t-acid rounded-full animate-spin" />
                 Signing in…
               </>
             ) : (
               <>
-                <span className="text-xl">⟡</span>
+                <span className="opacity-70">›</span>
                 Sign in with Farcaster
               </>
             )}
-          </button>
+          </Button>
 
           {isReady && !isInFrame && (
-            <p className="text-xs text-amber-400 text-center px-2">
+            <p className="text-xs font-mono text-gold text-center px-2">
               ⚠️ Open this app inside Warpcast for sign-in to work
             </p>
           )}
 
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs font-mono text-ink-muted text-center">
             By signing in you agree to our Terms & Privacy Policy
           </p>
         </div>

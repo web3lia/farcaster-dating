@@ -3,31 +3,31 @@ import { randomBytes } from "crypto";
 import { createServiceClient } from "@/lib/supabase/server";
 
 const NONCE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const RATE_WINDOW_MS = 60 * 1000;     // 1 minute window
-const RATE_LIMIT = 5;                  // max 5 nonces per IP per minute
-
-// In-memory rate limiter (per serverless instance — good enough to blunt
-// naive burst attacks; a shared store like Redis isn't needed here since
-// nonces are single-use and expire in 10 min anyway).
-const ipHits = new Map<string, number[]>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const hits = (ipHits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
-  hits.push(now);
-  ipHits.set(ip, hits);
-  return hits.length > RATE_LIMIT;
-}
 
 export async function GET(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
 
-  if (isRateLimited(ip)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  const identifier = `${ip}:nonce`;
+  const supabase = createServiceClient();
+
+  const { data: allowed, error: rlError } = await supabase.rpc("check_rate_limit", {
+    p_identifier: identifier,
+    p_max_requests: 5,
+    p_window_seconds: 60,
+  });
+
+  // Fail open — a DB hiccup must not block logins
+  if (!rlError && allowed === false) {
+    return NextResponse.json(
+      { error: "Too many requests, please slow down" },
+      { status: 429 }
+    );
   }
 
   const nonce = randomBytes(16).toString("hex");
-  const supabase = createServiceClient();
 
   // Purge expired nonces so the table doesn't grow unbounded.
   await supabase

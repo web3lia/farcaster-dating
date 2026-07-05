@@ -2,11 +2,11 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import sdk from "@farcaster/frame-sdk";
-import type { Context } from "@farcaster/frame-core";
+import type { Context } from "@farcaster/miniapp-core";
 
 interface FrameCtx {
   isReady: boolean;
-  context: Context.FrameContext | null;
+  context: Context.MiniAppContext | null;
 }
 
 const FrameCtxContext = createContext<FrameCtx>({ isReady: false, context: null });
