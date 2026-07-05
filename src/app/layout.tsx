@@ -66,7 +66,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`h-full ${inter.variable} ${jetbrains.variable}`}>
-      <body className={`${inter.variable} ${jetbrains.variable} font-sans h-full bg-terminal-bg text-ink`}>
+      <body className={`${inter.variable} ${jetbrains.variable} font-sans h-full bg-gray-950 text-white`}>
         <Providers>{children}</Providers>
       </body>
     </html>
