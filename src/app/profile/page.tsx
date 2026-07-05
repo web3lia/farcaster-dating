@@ -1,42 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { INTENTS, DEFAULT_INTENTS, intentsToMetas, PROMPT_LABEL, PROMPT_SHORT, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
+import { INTENTS, DEFAULT_INTENTS, PROMPT_LABEL, ABOUT_MAX, PROMPT_MAX } from "@/lib/intents";
 import { TRADING_STYLES, RISK_PROFILES } from "@/lib/crypto";
 import type { Intent, TradingStyle, RiskProfile } from "@/types";
 import toast from "react-hot-toast";
 import { authFetch } from "@/lib/auth/authFetch";
+import { ShareVibeButton } from "@/components/share/ShareVibeButton";
+import { Button } from "@/components/ui/Button";
 
 const INTERESTS = ["🎨 Art", "🎵 Music", "🏋️ Fitness", "📚 Books", "🎮 Gaming", "🌍 Travel", "🍕 Food", "💻 Tech", "🌿 Nature", "🎬 Film"];
+
+function buildForm(profile: NonNullable<ReturnType<typeof useAuthStore.getState>["profile"]>) {
+  return {
+    bio: profile.bio ?? "",
+    age: profile.age?.toString() ?? "",
+    location: profile.location ?? "",
+    interests: profile.interests ?? [] as string[],
+
+    intents: (profile.intents ?? []) as Intent[],
+    trading_style: (profile.trading_style ?? []) as TradingStyle[],
+    risk_profile: (profile.risk_profile ?? "") as RiskProfile | "",
+    about: profile.about ?? "",
+    prompt_answer: profile.prompt_answer ?? "",
+  };
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const { profile, fid, updateProfile, signOut } = useAuthStore();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    bio: profile?.bio ?? "",
-    age: profile?.age?.toString() ?? "",
-    location: profile?.location ?? "",
-    interests: profile?.interests ?? [] as string[],
-    looking_for: profile?.looking_for ?? "",
-    intents: (profile?.intents ?? []) as Intent[],
-    trading_style: (profile?.trading_style ?? []) as TradingStyle[],
-    risk_profile: (profile?.risk_profile ?? "") as RiskProfile | "",
-    about: profile?.about ?? "",
-    prompt_answer: profile?.prompt_answer ?? "",
-  });
+  const [form, setForm] = useState(() => profile ? buildForm(profile) : null!);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!profile) router.replace("/");
+  }, [profile, router]);
+
   if (!profile) {
-    router.replace("/");
     return null;
   }
 
+  function startEdit() {
+    setForm(buildForm(profile!));
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setForm(buildForm(profile!));
+    setEditing(false);
+  }
+
   function toggleIntent(id: Intent) {
+    if (!editing) return;
     setForm((f) => ({
       ...f,
       intents: f.intents.includes(id)
@@ -46,6 +66,7 @@ export default function ProfilePage() {
   }
 
   function toggleTradingStyle(id: TradingStyle) {
+    if (!editing) return;
     setForm((f) => ({
       ...f,
       trading_style: f.trading_style.includes(id)
@@ -55,6 +76,7 @@ export default function ProfilePage() {
   }
 
   function toggleInterest(tag: string) {
+    if (!editing) return;
     setForm((f) => ({
       ...f,
       interests: f.interests.includes(tag)
@@ -75,7 +97,7 @@ export default function ProfilePage() {
           age: form.age ? parseInt(form.age) : null,
           location: form.location,
           interests: form.interests,
-          looking_for: form.looking_for,
+
           intents: form.intents.length > 0 ? form.intents : DEFAULT_INTENTS,
           trading_style: form.trading_style,
           risk_profile: form.risk_profile || null,
@@ -89,27 +111,34 @@ export default function ProfilePage() {
       setEditing(false);
       toast.success("Profile saved!");
     } catch (e: unknown) {
+      // Stay in edit mode so the user doesn't lose their changes
       toast.error(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
     }
   }
 
+  const ro = !editing; // read-only shorthand
+
   return (
-    <div className="flex flex-col h-full safe-top overflow-y-auto pb-24">
+    <div className="flex flex-col h-full safe-top overflow-y-auto pb-[calc(4rem_+_env(safe-area-inset-bottom)_+_2rem)]">
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-4 shrink-0">
         <h1 className="text-xl font-bold text-white">👤 Profile</h1>
-        <button
-          onClick={() => setEditing((v) => !v)}
-          className="text-sm px-3 py-1.5 rounded-full bg-gray-800 text-gray-300"
-        >
-          {editing ? "Cancel" : "Edit"}
-        </button>
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={cancelEdit}>Cancel</Button>
+            <Button variant="primary" size="sm" onClick={save} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        ) : (
+          <Button variant="secondary" size="sm" onClick={startEdit}>Edit</Button>
+        )}
       </header>
 
       <div className="px-5 space-y-6">
-        {/* Avatar */}
+        {/* Avatar + identity */}
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full overflow-hidden border-3 border-brand-500 shrink-0">
             <Avatar
@@ -127,249 +156,198 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {editing ? (
-          <div className="space-y-4">
-            {/* 3. Age */}
-            <div>
-              <label className="text-xs text-gray-400 mb-1 block">Age</label>
-              <input
-                type="number"
-                value={form.age}
-                onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="18"
-              />
-            </div>
+        {/* Share my vibe */}
+        <ShareVibeButton profile={profile} />
 
-            {/* 4. Location */}
-            <div>
-              <label className="text-xs text-gray-400 mb-1 block">Location</label>
-              <input
-                value={form.location}
-                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="SF, CA"
-              />
-            </div>
-
-            {/* 5. About / Bio */}
-            <div>
-              <label className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>About you</span>
-                <span>{form.about.length}/{ABOUT_MAX}</span>
-              </label>
-              <textarea
-                value={form.about}
-                onChange={(e) => setForm((f) => ({ ...f, about: e.target.value.slice(0, ABOUT_MAX) }))}
-                rows={3}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                placeholder="What you do, what you're into…"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-400 mb-1 block">Bio</label>
-              <textarea
-                value={form.bio}
-                onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                rows={3}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                placeholder="Tell people about yourself…"
-              />
-            </div>
-
-            {/* Prompt */}
-            <div>
-              <label className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>{PROMPT_LABEL}</span>
-                <span>{form.prompt_answer.length}/{PROMPT_MAX}</span>
-              </label>
-              <textarea
-                value={form.prompt_answer}
-                onChange={(e) => setForm((f) => ({ ...f, prompt_answer: e.target.value.slice(0, PROMPT_MAX) }))}
-                rows={2}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                placeholder="What you're working on right now…"
-              />
-            </div>
-
-            {/* Looking for */}
-            <div>
-              <label className="text-xs text-gray-400 mb-1 block">Looking for</label>
-              <input
-                value={form.looking_for}
-                onChange={(e) => setForm((f) => ({ ...f, looking_for: e.target.value }))}
-                className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
-                placeholder="everyone, women, men…"
-              />
-            </div>
-
-            {/* Intents */}
-            <div>
-              <label className="text-xs text-gray-400 mb-2 block">I'm here for (pick one or more)</label>
-              <div className="space-y-2">
-                {INTENTS.map((meta) => {
-                  const active = form.intents.includes(meta.id);
-                  return (
-                    <button
-                      key={meta.id}
-                      type="button"
-                      onClick={() => toggleIntent(meta.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-colors ${
-                        active ? meta.selectedClass : "border-gray-800 bg-gray-900/50"
-                      }`}
-                    >
-                      <span className="text-2xl">{meta.emoji}</span>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-white">{meta.label}</p>
-                        <p className="text-xs text-gray-400">{meta.description}</p>
-                      </div>
-                      <span
-                        className={`w-4 h-4 rounded-md border-2 shrink-0 flex items-center justify-center text-[10px] ${
-                          active ? "border-brand-500 bg-brand-500 text-white" : "border-gray-600"
-                        }`}
-                      >
-                        {active ? "✓" : ""}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Interests */}
-            <div>
-              <label className="text-xs text-gray-400 mb-2 block">Interests</label>
-              <div className="flex flex-wrap gap-2">
-                {INTERESTS.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleInterest(tag)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      form.interests.includes(tag)
-                        ? "bg-brand-600 border-brand-600 text-white"
-                        : "border-gray-700 text-gray-400"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 8. Trading style (multi-select) */}
-            <div>
-              <label className="text-xs text-gray-400 mb-2 block">Trading style (pick all that apply)</label>
-              <div className="grid grid-cols-2 gap-2">
-                {TRADING_STYLES.map((s) => {
-                  const active = form.trading_style.includes(s.id);
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => toggleTradingStyle(s.id)}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-colors ${
-                        active
-                          ? "border-brand-500 bg-brand-500/20 text-white"
-                          : "border-gray-800 bg-gray-900/50 text-gray-400"
-                      }`}
-                    >
-                      <span className="text-lg leading-none">{s.emoji}</span>
-                      <span className="text-xs font-semibold">{s.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 9. Risk profile (single-select) */}
-            <div>
-              <label className="text-xs text-gray-400 mb-2 block">Risk profile</label>
-              <div className="flex flex-wrap gap-2">
-                {RISK_PROFILES.map((r) => {
-                  const active = form.risk_profile === r.id;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, risk_profile: active ? "" : r.id }))}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-full border-2 text-sm font-semibold transition-colors ${
-                        active
-                          ? "border-amber-500 bg-amber-500/20 text-amber-300"
-                          : "border-gray-800 bg-gray-900/50 text-gray-400"
-                      }`}
-                    >
-                      <span>{r.emoji}</span>
-                      <span>{r.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              onClick={save}
-              disabled={saving}
-              className="w-full py-3 bg-brand-600 text-white font-bold rounded-2xl disabled:opacity-50"
-            >
-              {saving ? "Saving…" : "Save changes"}
-            </button>
+        {/* Fields — always rendered; disabled when not editing */}
+        <div className="space-y-4">
+          {/* Age */}
+          <div>
+            <label className="text-xs font-mono text-ink-muted mb-1.5 block">Age</label>
+            <input
+              type="number"
+              value={form.age}
+              onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
+              disabled={ro}
+              className="w-full bg-surface border border-ui-border text-ink placeholder-ink-muted/60 rounded-lg px-4 py-2.5 text-sm font-sans outline-none focus:border-acid/50 focus:ring-1 focus:ring-acid/30 transition-colors disabled:opacity-60 disabled:cursor-default"
+              placeholder="18"
+            />
           </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Intents */}
+
+          {/* Location */}
+          <div>
+            <label className="text-xs font-mono text-ink-muted mb-1.5 block">Location</label>
+            <input
+              value={form.location}
+              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              disabled={ro}
+              className="w-full bg-surface border border-ui-border text-ink placeholder-ink-muted/60 rounded-lg px-4 py-2.5 text-sm font-sans outline-none focus:border-acid/50 focus:ring-1 focus:ring-acid/30 transition-colors disabled:opacity-60 disabled:cursor-default"
+              placeholder="SF, CA"
+            />
+          </div>
+
+          {/* About */}
+          <div>
+            <label className="flex justify-between text-xs font-mono text-ink-muted mb-1.5">
+              <span>About you</span>
+              {editing && <span>{form.about.length}/{ABOUT_MAX}</span>}
+            </label>
+            <textarea
+              value={form.about}
+              onChange={(e) => setForm((f) => ({ ...f, about: e.target.value.slice(0, ABOUT_MAX) }))}
+              disabled={ro}
+              rows={3}
+              className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none disabled:opacity-60 disabled:cursor-default"
+              placeholder="What you do, what you're into…"
+            />
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label className="text-xs font-mono text-ink-muted mb-1.5 block">Bio</label>
+            <textarea
+              value={form.bio}
+              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+              disabled={ro}
+              rows={3}
+              className="w-full bg-gray-800 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none disabled:opacity-60 disabled:cursor-default"
+              placeholder="Tell people about yourself…"
+            />
+          </div>
+
+          {/* Intents */}
+          <div>
+            <label className="text-xs font-mono text-ink-muted mb-2 block">I'm here for (pick one or more)</label>
+            <div className="space-y-2">
+              {INTENTS.map((meta) => {
+                const active = form.intents.includes(meta.id);
+                return (
+                  <button
+                    key={meta.id}
+                    type="button"
+                    onClick={() => toggleIntent(meta.id)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-colors ${
+                      active ? meta.selectedClass : "border-ui-border bg-surface/50"
+                    } ${ro ? "cursor-default" : ""}`}
+                  >
+                    <span className="text-2xl">{meta.emoji}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">{meta.label}</p>
+                      <p className="text-xs text-gray-400">{meta.description}</p>
+                    </div>
+                    <span
+                      className={`w-4 h-4 rounded-md border-2 shrink-0 flex items-center justify-center text-[10px] ${
+                        active ? "border-brand-500 bg-brand-500 text-white" : "border-gray-600"
+                      }`}
+                    >
+                      {active ? "✓" : ""}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Interests */}
+          <div>
+            <label className="text-xs font-mono text-ink-muted mb-2 block">Interests</label>
             <div className="flex flex-wrap gap-2">
-              {intentsToMetas(profile.intents).map((meta) => (
-                <div
-                  key={meta.id}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold ${meta.badgeClass}`}
+              {INTERESTS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleInterest(tag)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    form.interests.includes(tag)
+                      ? "bg-brand-600 border-brand-600 text-white"
+                      : "border-ui-border text-ink-muted"
+                  } ${ro ? "cursor-default" : ""}`}
                 >
-                  <span className="text-sm leading-none">{meta.emoji}</span>
-                  <span>{meta.label}</span>
-                </div>
+                  {tag}
+                </button>
               ))}
             </div>
-
-            {/* About / Bio */}
-            {profile.about && (
-              <p className="text-gray-200 text-sm leading-relaxed">{profile.about}</p>
-            )}
-            {profile.prompt_answer && (
-              <p className="text-sm text-gray-300">
-                <span className="font-semibold text-white">🛠 {PROMPT_SHORT}:</span>{" "}
-                {profile.prompt_answer}
-              </p>
-            )}
-            {profile.bio && (
-              <p className="text-gray-300 text-sm leading-relaxed">{profile.bio}</p>
-            )}
-
-            {/* Location */}
-            {profile.location && (
-              <p className="text-sm text-gray-400">📍 {profile.location}</p>
-            )}
-
-            {/* Interests */}
-            {profile.interests.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {profile.interests.map((tag) => (
-                  <span key={tag} className="text-xs bg-gray-800 text-gray-300 rounded-full px-3 py-1.5">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
-        )}
+
+          {/* Trading style */}
+          <div>
+            <label className="text-xs font-mono text-ink-muted mb-2 block">Trading style (pick all that apply)</label>
+            <div className="grid grid-cols-2 gap-2">
+              {TRADING_STYLES.map((s) => {
+                const active = form.trading_style.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => toggleTradingStyle(s.id)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-colors ${
+                      active
+                        ? "border-acid bg-acid/15 text-ink"
+                        : "border-ui-border bg-surface/50 text-ink-muted"
+                    } ${ro ? "cursor-default" : ""}`}
+                  >
+                    <span className="text-lg leading-none">{s.emoji}</span>
+                    <span className="text-xs font-mono font-semibold">{s.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Risk profile */}
+          <div>
+            <label className="text-xs font-mono text-ink-muted mb-2 block">Risk profile</label>
+            <div className="flex flex-wrap gap-2">
+              {RISK_PROFILES.map((r) => {
+                const active = form.risk_profile === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => {
+                      if (!editing) return;
+                      setForm((f) => ({ ...f, risk_profile: active ? "" : r.id }));
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full border-2 text-sm font-semibold transition-colors ${
+                      active
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-ui-border bg-surface/50 text-ink-muted"
+                    } ${ro ? "cursor-default" : ""}`}
+                  >
+                    <span>{r.emoji}</span>
+                    <span>{r.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Prompt */}
+          <div>
+            <label className="flex justify-between text-xs font-mono text-ink-muted mb-1.5">
+              <span>{PROMPT_LABEL}</span>
+              {editing && <span>{form.prompt_answer.length}/{PROMPT_MAX}</span>}
+            </label>
+            <textarea
+              value={form.prompt_answer}
+              onChange={(e) => setForm((f) => ({ ...f, prompt_answer: e.target.value.slice(0, PROMPT_MAX) }))}
+              disabled={ro}
+              rows={2}
+              className="w-full bg-surface border border-ui-border text-ink placeholder-ink-muted/60 rounded-lg px-4 py-2.5 text-sm font-sans outline-none focus:border-acid/50 focus:ring-1 focus:ring-acid/30 transition-colors resize-none disabled:opacity-60 disabled:cursor-default"
+              placeholder="What you're working on right now…"
+            />
+          </div>
+        </div>
 
         {/* Sign out */}
-        <button
+        <Button
+          variant="secondary"
+          size="md"
+          fullWidth
           onClick={() => { signOut(); router.replace("/"); }}
-          className="w-full py-2.5 border border-gray-700 text-gray-400 rounded-2xl text-sm mt-4"
         >
           Sign out
-        </button>
+        </Button>
       </div>
 
       <BottomNav />
