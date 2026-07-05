@@ -28,3 +28,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# External projects living in this dir but not part of the app
+/base-tldr-bot/
+/crypto-bot/
+
+# Local Claude Code settings
+.claude/settings.local.json
