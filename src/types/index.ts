@@ -40,6 +40,8 @@ export interface Profile {
   prompt_answer: string;
   created_at: string;
   updated_at: string;
+  superliked_you?: boolean;
+  superlike_message?: string | null;
 }
 
 export interface Swipe {
