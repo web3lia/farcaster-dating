@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // viem/ox use dynamic require() in worker pool code — exclude from webpack bundling
-  serverExternalPackages: ["viem", "wagmi", "@farcaster/auth-kit", "@farcaster/frame-sdk"],
+  experimental: {
+    serverComponentsExternalPackages: ["viem", "wagmi", "@farcaster/auth-kit", "@farcaster/frame-sdk"],
+  },
 
   images: {
     remotePatterns: [
