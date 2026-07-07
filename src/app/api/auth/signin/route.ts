@@ -55,6 +55,17 @@ export async function POST(req: NextRequest) {
   }
   const fid = result.fid;
 
+  // Banned users are blocked at the door: no session is minted, so they can't
+  // enter the app. Checked before upsert so we never touch their row.
+  const { data: banCheck } = await supabase
+    .from("profiles")
+    .select("banned")
+    .eq("fid", fid)
+    .maybeSingle();
+  if (banCheck?.banned) {
+    return NextResponse.json({ error: "Account suspended" }, { status: 403 });
+  }
+
   // Build profile: try Neynar first, fall back to minimal data
   const u = await fetchNeynarProfile(fid);
   const profileData = {

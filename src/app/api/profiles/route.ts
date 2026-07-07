@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
     .from("profiles")
     .select("*")
     .eq("show_in_discovery", true)
+    .eq("banned", false)
     .not("fid", "in", `(${swipedFids.join(",")})`)
     .order("follower_count", { ascending: false })
     .limit(20);
